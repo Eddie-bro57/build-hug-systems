@@ -78,14 +78,24 @@ function Home() {
               key={c.slug}
               to="/category/$slug"
               params={{ slug: c.slug }}
-              className="group relative overflow-hidden rounded-2xl border border-border bg-white/70 p-5 transition hover:-translate-y-0.5 hover:shadow-lg"
+              className="group relative overflow-hidden rounded-2xl border border-border bg-white/70 transition hover:-translate-y-0.5 hover:shadow-lg"
             >
-              <div
-                className={`absolute inset-x-0 top-0 h-24 bg-gradient-to-br ${c.gradient} opacity-20 transition group-hover:opacity-40`}
-              />
-              <div className="relative">
-                <div className="text-4xl">{c.emoji}</div>
-                <div className="mt-3 text-base font-semibold">{c.name}</div>
+              <div className="relative h-36 w-full overflow-hidden">
+                <img
+                  src={c.image}
+                  alt={c.name}
+                  className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
+                  loading="lazy"
+                  width={512}
+                  height={512}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+                <div className="absolute bottom-3 left-4 text-2xl font-bold text-white drop-shadow-md">
+                  {c.name}
+                </div>
+              </div>
+              <div className="p-5">
+                <div className="text-2xl">{c.emoji}</div>
                 <div className="mt-1 line-clamp-2 text-sm text-muted-foreground">
                   {c.description}
                 </div>
