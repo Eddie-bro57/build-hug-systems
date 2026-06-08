@@ -72,6 +72,38 @@ export const categories: Category[] = [
     examples: ["Start a morning routine", "Meditate for beginners", "Budget your salary"],
     gradient: "from-[#84cc16] to-[#16a34a]",
   },
+  {
+    slug: "art",
+    name: "Art & Crafts",
+    emoji: "🎨",
+    description: "Create, draw, paint, and make things by hand.",
+    examples: ["Mix watercolors", "Crochet a scarf", "Make pottery at home"],
+    gradient: "from-[#f43f5e] to-[#be185d]",
+  },
+  {
+    slug: "health",
+    name: "Health & Wellness",
+    emoji: "🩺",
+    description: "Care for your body and mind with expert-backed steps.",
+    examples: ["Do yoga for beginners", "Meal prep for the week", "Improve your posture"],
+    gradient: "from-[#14b8a6] to-[#0f766e]",
+  },
+  {
+    slug: "finance",
+    name: "Finance",
+    emoji: "💰",
+    description: "Manage money, invest, and plan for the future.",
+    examples: ["Build an emergency fund", "Start investing", "File your taxes"],
+    gradient: "from-[#eab308] to-[#a16207]",
+  },
+  {
+    slug: "auto",
+    name: "Automotive",
+    emoji: "🚗",
+    description: "Drive smarter, maintain your ride, and fix the basics.",
+    examples: ["Change a tire", "Jump-start a car", "Check your oil level"],
+    gradient: "from-[#ef4444] to-[#991b1b]",
+  },
 ];
 
 export const getCategory = (slug: string) => categories.find((c) => c.slug === slug);
