@@ -65,7 +65,7 @@ function CategoryPage() {
             Popular in this category
           </h3>
           <div className="grid gap-3 sm:grid-cols-2">
-            {category.examples.map((ex) => (
+            {category.examples.map((ex: string) => (
               <Link
                 key={ex}
                 to="/guide"

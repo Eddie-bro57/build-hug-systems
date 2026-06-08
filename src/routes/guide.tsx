@@ -23,15 +23,10 @@ const searchSchema = z.object({
 
 export const Route = createFileRoute("/guide")({
   validateSearch: searchSchema,
-  head: ({ search }) => ({
+  head: () => ({
     meta: [
-      { title: search?.q ? `How to ${search.q} — DoGuide` : "Guide — DoGuide" },
-      {
-        name: "description",
-        content: search?.q
-          ? `Step-by-step guide for "${search.q}" on DoGuide.`
-          : "Step-by-step guides on DoGuide.",
-      },
+      { title: "Guide — DoGuide" },
+      { name: "description", content: "Step-by-step guides on DoGuide." },
     ],
   }),
   component: GuidePage,
