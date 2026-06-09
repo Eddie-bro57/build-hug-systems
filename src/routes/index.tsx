@@ -64,6 +64,8 @@ function Home() {
         </div>
       </section>
 
+      <RecentAndSaved />
+
       {/* Categories */}
       <section id="categories" className="mx-auto max-w-6xl px-6 pb-16">
         <div className="mb-6 flex items-end justify-between">
