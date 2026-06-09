@@ -63,6 +63,52 @@ function GuidePage() {
     ? `https://www.youtube.com/embed?listType=search&list=${encodeURIComponent(guide.video_query)}`
     : null;
 
+  const { isFavorite, toggle } = useFavorites();
+  const { push: pushRecent } = useRecents();
+  const saved = isFavorite(q, c);
+  const [copied, setCopied] = useState(false);
+  const [shared, setShared] = useState(false);
+
+  useEffect(() => {
+    if (guide) pushRecent({ q, c, title: guide.title });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [guide?.title]);
+
+  const onCopy = async () => {
+    if (!guide) return;
+    const text =
+      `${guide.title}\n${guide.summary}\n\n` +
+      guide.steps.map((s, i) => `${i + 1}. ${s.title}\n   ${s.detail}`).join("\n\n") +
+      (guide.tips.length ? `\n\nTips:\n- ${guide.tips.join("\n- ")}` : "");
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      /* ignore */
+    }
+  };
+
+  const onShare = async () => {
+    const url = typeof window !== "undefined" ? window.location.href : "";
+    const shareData = { title: guide?.title ?? `DoGuide: ${q}`, text: guide?.summary, url };
+    try {
+      if (typeof navigator !== "undefined" && (navigator as Navigator & { share?: (d: ShareData) => Promise<void> }).share) {
+        await (navigator as Navigator & { share: (d: ShareData) => Promise<void> }).share(shareData);
+      } else {
+        await navigator.clipboard.writeText(url);
+        setShared(true);
+        setTimeout(() => setShared(false), 1500);
+      }
+    } catch {
+      /* user dismissed */
+    }
+  };
+
+  const onPrint = () => {
+    if (typeof window !== "undefined") window.print();
+  };
+
   return (
     <div>
       <Header />
