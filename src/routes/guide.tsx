@@ -132,7 +132,43 @@ function GuidePage() {
           {guide ? guide.title : `How to: ${q}`}
         </h1>
 
-        <div className="mt-5">
+        {guide && (
+          <div className="mt-4 flex flex-wrap gap-2 print:hidden">
+            <button
+              onClick={() => toggle({ q, c, title: guide.title })}
+              className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-2 text-sm font-medium transition ${
+                saved
+                  ? "border-rose-200 bg-rose-50 text-rose-700"
+                  : "border-border bg-white hover:bg-muted"
+              }`}
+            >
+              <Heart className={`h-4 w-4 ${saved ? "fill-rose-500 text-rose-500" : ""}`} />
+              {saved ? "Saved" : "Save"}
+            </button>
+            <button
+              onClick={onShare}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-white px-3 py-2 text-sm font-medium hover:bg-muted"
+            >
+              {shared ? <Check className="h-4 w-4" /> : <Share2 className="h-4 w-4" />}
+              {shared ? "Link copied" : "Share"}
+            </button>
+            <button
+              onClick={onCopy}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-white px-3 py-2 text-sm font-medium hover:bg-muted"
+            >
+              {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+              {copied ? "Copied" : "Copy steps"}
+            </button>
+            <button
+              onClick={onPrint}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-white px-3 py-2 text-sm font-medium hover:bg-muted"
+            >
+              <Printer className="h-4 w-4" /> Print
+            </button>
+          </div>
+        )}
+
+        <div className="mt-5 print:hidden">
           <SearchBar placeholder="Ask DoGuide something else…" category={c} />
         </div>
 
