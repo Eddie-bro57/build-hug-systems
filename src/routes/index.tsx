@@ -151,3 +151,85 @@ function Home() {
     </div>
   );
 }
+
+function RecentAndSaved() {
+  const { recents, clear } = useRecents();
+  const { favorites } = useFavorites();
+  if (recents.length === 0 && favorites.length === 0) return null;
+
+  return (
+    <section className="mx-auto max-w-6xl px-6 pb-6">
+      <div className="grid gap-6 md:grid-cols-2">
+        {recents.length > 0 && (
+          <div className="card-elev rounded-2xl p-5">
+            <div className="mb-3 flex items-center justify-between">
+              <h3 className="inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+                <Clock className="h-4 w-4" /> Recent
+              </h3>
+              <button
+                onClick={clear}
+                className="text-xs text-muted-foreground hover:text-foreground"
+              >
+                Clear
+              </button>
+            </div>
+            <ul className="space-y-2">
+              {recents.slice(0, 5).map((r) => {
+                const cat = r.c ? getCategory(r.c) : undefined;
+                return (
+                  <li key={`${r.q}|${r.c ?? ""}`}>
+                    <Link
+                      to="/guide"
+                      search={{ q: r.q, ...(r.c ? { c: r.c } : {}) }}
+                      className="group flex items-center justify-between gap-3 rounded-xl px-3 py-2 hover:bg-muted"
+                    >
+                      <div className="min-w-0">
+                        <div className="truncate text-sm font-medium">{r.title ?? r.q}</div>
+                        {cat && (
+                          <div className="text-xs text-muted-foreground">
+                            {cat.emoji} {cat.name}
+                          </div>
+                        )}
+                      </div>
+                      <ArrowRight className="h-4 w-4 text-muted-foreground transition group-hover:translate-x-0.5" />
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        )}
+        {favorites.length > 0 && (
+          <div className="card-elev rounded-2xl p-5">
+            <div className="mb-3 flex items-center justify-between">
+              <h3 className="inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+                <Heart className="h-4 w-4 text-rose-500" /> Saved
+              </h3>
+              <Link to="/saved" className="text-xs text-primary hover:underline">
+                See all
+              </Link>
+            </div>
+            <ul className="space-y-2">
+              {favorites.slice(0, 5).map((f) => (
+                <li key={`${f.q}|${f.c ?? ""}`}>
+                  <Link
+                    to="/guide"
+                    search={{ q: f.q, ...(f.c ? { c: f.c } : {}) }}
+                    className="flex items-center justify-between gap-3 rounded-xl px-3 py-2 hover:bg-muted"
+                  >
+                    <div className="truncate text-sm font-medium">{f.title ?? f.q}</div>
+                    <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
+// keep X import used (suppress unused) — re-export type for tree shaking
+export const _unused = X;
+
