@@ -1,20 +1,27 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 import { z } from "zod";
 import {
   ArrowLeft,
+  Check,
   Clock,
+  Copy,
   Gauge,
+  Heart,
   Lightbulb,
   ListChecks,
   PlayCircle,
+  Printer,
   RefreshCw,
+  Share2,
 } from "lucide-react";
 import { Header } from "@/components/Header";
 import { SearchBar } from "@/components/SearchBar";
 import { generateGuide } from "@/lib/guides.functions";
 import { getCategory } from "@/lib/categories";
+import { useFavorites, useRecents } from "@/lib/storage";
 
 const searchSchema = z.object({
   q: z.string().min(1),
