@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, BookOpen, Clock, Heart, PlayCircle, Sparkles, X } from "lucide-react";
+import { ArrowRight, BookOpen, Clock, Heart, PlayCircle, Sparkles } from "lucide-react";
 import { categories, getCategory } from "@/lib/categories";
 import { Header } from "@/components/Header";
 import { SearchBar } from "@/components/SearchBar";
