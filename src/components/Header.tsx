@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Compass } from "lucide-react";
+import { Compass, Heart } from "lucide-react";
 
 export function Header() {
   return (
@@ -16,10 +16,16 @@ export function Header() {
             </div>
           </div>
         </Link>
-        <nav className="hidden gap-6 text-sm font-medium text-muted-foreground md:flex">
-          <Link to="/" className="hover:text-foreground">Home</Link>
-          <a href="#categories" className="hover:text-foreground">Categories</a>
-          <a href="#how" className="hover:text-foreground">How it works</a>
+        <nav className="flex items-center gap-2 text-sm font-medium text-muted-foreground md:gap-6">
+          <Link to="/" className="hidden hover:text-foreground md:inline">Home</Link>
+          <a href="/#categories" className="hidden hover:text-foreground md:inline">Categories</a>
+          <a href="/#how" className="hidden hover:text-foreground md:inline">How it works</a>
+          <Link
+            to="/saved"
+            className="inline-flex items-center gap-1.5 rounded-full border border-border bg-white/70 px-3 py-1.5 text-foreground hover:bg-white"
+          >
+            <Heart className="h-4 w-4 text-rose-500" /> Saved
+          </Link>
         </nav>
       </div>
     </header>

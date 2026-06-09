@@ -1,20 +1,27 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 import { z } from "zod";
 import {
   ArrowLeft,
+  Check,
   Clock,
+  Copy,
   Gauge,
+  Heart,
   Lightbulb,
   ListChecks,
   PlayCircle,
+  Printer,
   RefreshCw,
+  Share2,
 } from "lucide-react";
 import { Header } from "@/components/Header";
 import { SearchBar } from "@/components/SearchBar";
 import { generateGuide } from "@/lib/guides.functions";
 import { getCategory } from "@/lib/categories";
+import { useFavorites, useRecents } from "@/lib/storage";
 
 const searchSchema = z.object({
   q: z.string().min(1),
@@ -56,6 +63,52 @@ function GuidePage() {
     ? `https://www.youtube.com/embed?listType=search&list=${encodeURIComponent(guide.video_query)}`
     : null;
 
+  const { isFavorite, toggle } = useFavorites();
+  const { push: pushRecent } = useRecents();
+  const saved = isFavorite(q, c);
+  const [copied, setCopied] = useState(false);
+  const [shared, setShared] = useState(false);
+
+  useEffect(() => {
+    if (guide) pushRecent({ q, c, title: guide.title });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [guide?.title]);
+
+  const onCopy = async () => {
+    if (!guide) return;
+    const text =
+      `${guide.title}\n${guide.summary}\n\n` +
+      guide.steps.map((s, i) => `${i + 1}. ${s.title}\n   ${s.detail}`).join("\n\n") +
+      (guide.tips.length ? `\n\nTips:\n- ${guide.tips.join("\n- ")}` : "");
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      /* ignore */
+    }
+  };
+
+  const onShare = async () => {
+    const url = typeof window !== "undefined" ? window.location.href : "";
+    const shareData = { title: guide?.title ?? `DoGuide: ${q}`, text: guide?.summary, url };
+    try {
+      if (typeof navigator !== "undefined" && (navigator as Navigator & { share?: (d: ShareData) => Promise<void> }).share) {
+        await (navigator as Navigator & { share: (d: ShareData) => Promise<void> }).share(shareData);
+      } else {
+        await navigator.clipboard.writeText(url);
+        setShared(true);
+        setTimeout(() => setShared(false), 1500);
+      }
+    } catch {
+      /* user dismissed */
+    }
+  };
+
+  const onPrint = () => {
+    if (typeof window !== "undefined") window.print();
+  };
+
   return (
     <div>
       <Header />
@@ -79,7 +132,43 @@ function GuidePage() {
           {guide ? guide.title : `How to: ${q}`}
         </h1>
 
-        <div className="mt-5">
+        {guide && (
+          <div className="mt-4 flex flex-wrap gap-2 print:hidden">
+            <button
+              onClick={() => toggle({ q, c, title: guide.title })}
+              className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-2 text-sm font-medium transition ${
+                saved
+                  ? "border-rose-200 bg-rose-50 text-rose-700"
+                  : "border-border bg-white hover:bg-muted"
+              }`}
+            >
+              <Heart className={`h-4 w-4 ${saved ? "fill-rose-500 text-rose-500" : ""}`} />
+              {saved ? "Saved" : "Save"}
+            </button>
+            <button
+              onClick={onShare}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-white px-3 py-2 text-sm font-medium hover:bg-muted"
+            >
+              {shared ? <Check className="h-4 w-4" /> : <Share2 className="h-4 w-4" />}
+              {shared ? "Link copied" : "Share"}
+            </button>
+            <button
+              onClick={onCopy}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-white px-3 py-2 text-sm font-medium hover:bg-muted"
+            >
+              {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+              {copied ? "Copied" : "Copy steps"}
+            </button>
+            <button
+              onClick={onPrint}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-white px-3 py-2 text-sm font-medium hover:bg-muted"
+            >
+              <Printer className="h-4 w-4" /> Print
+            </button>
+          </div>
+        )}
+
+        <div className="mt-5 print:hidden">
           <SearchBar placeholder="Ask DoGuide something else…" category={c} />
         </div>
 
