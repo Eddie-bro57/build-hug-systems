@@ -74,24 +74,30 @@
   * { border-color: var(--color-border); }
   html, body { font-family: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif; }
   body {
-    background:
-      /* top-right warm peach glow */
-      radial-gradient(1200px 700px at 95% -5%, oklch(0.88 0.1 55 / 0.45), transparent 65%),
-      /* top-left soft lavender glow */
-      radial-gradient(1000px 600px at -5% 5%, oklch(0.88 0.08 280 / 0.35), transparent 60%),
-      /* bottom-right teal mist */
-      radial-gradient(900px 600px at 105% 95%, oklch(0.88 0.07 180 / 0.3), transparent 60%),
-      /* center-left rose blush */
-      radial-gradient(700px 500px at 20% 60%, oklch(0.9 0.06 20 / 0.2), transparent 55%),
-      /* subtle bottom-left sand */
-      radial-gradient(800px 500px at 5% 90%, oklch(0.92 0.04 70 / 0.25), transparent 55%),
-      var(--color-background);
-    background-attachment: fixed;
+    background: var(--color-background);
     color: var(--color-foreground);
     min-height: 100vh;
+    position: relative;
+  }
+  /* Layered glow gradients — scaled by --bg-glow (0..1) */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    opacity: var(--bg-glow, 1);
+    transition: opacity 200ms ease;
+    background:
+      radial-gradient(1200px 700px at 95% -5%, oklch(0.88 0.1 55 / 0.45), transparent 65%),
+      radial-gradient(1000px 600px at -5% 5%, oklch(0.88 0.08 280 / 0.35), transparent 60%),
+      radial-gradient(900px 600px at 105% 95%, oklch(0.88 0.07 180 / 0.3), transparent 60%),
+      radial-gradient(700px 500px at 20% 60%, oklch(0.9 0.06 20 / 0.2), transparent 55%),
+      radial-gradient(800px 500px at 5% 90%, oklch(0.92 0.04 70 / 0.25), transparent 55%);
   }
   h1, h2, h3 { letter-spacing: -0.02em; }
 }
+
 
 @layer utilities {
   .glass {
