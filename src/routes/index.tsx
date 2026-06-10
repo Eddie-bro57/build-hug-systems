@@ -25,7 +25,11 @@ function Home() {
   return (
     <div className="relative overflow-hidden">
       {/* Decorative floating orbs */}
-      <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
+      <div
+        className="pointer-events-none absolute inset-0 -z-10 overflow-hidden transition-opacity duration-200"
+        style={{ opacity: "var(--bg-orbs, 1)" }}
+      >
+
         <div
           className="orb"
           style={{
