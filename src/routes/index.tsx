@@ -196,12 +196,99 @@ function Home() {
         </div>
       </section>
 
+      {!user && <JoinCta onSignUp={() => openAuth("signup")} onSignIn={() => openAuth("signin")} />}
+
       <footer className="border-t border-border/60 py-8 text-center text-xs text-muted-foreground">
         Built with DoGuide — your friendly step-by-step companion.
       </footer>
+
+      <AuthModal open={authOpen} onOpenChange={setAuthOpen} defaultMode={authMode} />
     </div>
   );
 }
+
+function JoinCta({ onSignUp, onSignIn }: { onSignUp: () => void; onSignIn: () => void }) {
+  const perks = [
+    "Save guides to your library",
+    "Sync recents across devices",
+    "Personal recommendations",
+  ];
+  return (
+    <section id="join" className="mx-auto max-w-6xl px-6 pb-24">
+      <div className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-white/80 via-white/60 to-white/40 p-8 shadow-sm md:p-12">
+        <div
+          className="orb"
+          style={{
+            width: 400,
+            height: 400,
+            background: "oklch(0.85 0.12 35 / 0.35)",
+            top: "-20%",
+            right: "-10%",
+          }}
+        />
+        <div className="relative grid items-center gap-8 md:grid-cols-2">
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full border border-border bg-white/70 px-3 py-1 text-xs font-medium text-muted-foreground">
+              <UserPlus className="h-3.5 w-3.5 text-primary" />
+              Free account
+            </div>
+            <h2 className="mt-4 text-3xl font-bold tracking-tight md:text-4xl">
+              Create your DoGuide account
+            </h2>
+            <p className="mt-3 max-w-md text-muted-foreground">
+              Save your favorite guides, keep your recent searches in sync, and
+              get the most out of DoGuide — it only takes a moment.
+            </p>
+            <ul className="mt-5 space-y-2">
+              {perks.map((p) => (
+                <li key={p} className="flex items-center gap-2 text-sm">
+                  <CheckCircle2 className="h-4 w-4 text-primary" />
+                  <span>{p}</span>
+                </li>
+              ))}
+            </ul>
+            <div className="mt-6 flex flex-wrap items-center gap-3">
+              <Button size="lg" onClick={onSignUp}>
+                <UserPlus className="mr-2 h-4 w-4" /> Sign up — it's free
+              </Button>
+              <Button size="lg" variant="ghost" onClick={onSignIn}>
+                I already have an account
+              </Button>
+            </div>
+          </div>
+
+          <div className="card-elev rounded-2xl p-6 md:p-8">
+            <div className="flex items-center gap-3">
+              <div className="grid h-10 w-10 place-items-center rounded-xl bg-primary text-primary-foreground">
+                <Sparkles className="h-5 w-5" />
+              </div>
+              <div>
+                <div className="font-semibold">Your DoGuide library</div>
+                <div className="text-xs text-muted-foreground">A home for guides you love</div>
+              </div>
+            </div>
+            <div className="mt-5 space-y-2">
+              {["Bake banana bread", "Tune a guitar", "Write a great CV"].map((t, i) => (
+                <div
+                  key={t}
+                  className="flex items-center justify-between rounded-xl border border-border bg-white/70 px-3 py-2 text-sm"
+                  style={{ opacity: 1 - i * 0.15 }}
+                >
+                  <span className="truncate">{t}</span>
+                  <Heart className="h-4 w-4 text-rose-500" />
+                </div>
+              ))}
+            </div>
+            <p className="mt-4 text-xs text-muted-foreground">
+              Sign in from any device to access your library.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 
 function RecentAndSaved() {
   const { recents, clear } = useRecents();
