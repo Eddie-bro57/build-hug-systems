@@ -1,9 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, BookOpen, Clock, Heart, PlayCircle, Sparkles } from "lucide-react";
+import { ArrowRight, BookOpen, CheckCircle2, Clock, Heart, PlayCircle, Sparkles, UserPlus } from "lucide-react";
+import { useState } from "react";
 import { categories, getCategory } from "@/lib/categories";
 import { Header } from "@/components/Header";
 import { SearchBar } from "@/components/SearchBar";
 import { useFavorites, useRecents } from "@/lib/storage";
+import { useAuth } from "@/hooks/useAuth";
+import { AuthModal } from "@/components/AuthModal";
+import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/")({
   head: () => ({
