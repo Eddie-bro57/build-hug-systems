@@ -23,11 +23,45 @@ export const Route = createFileRoute("/")({
 
 function Home() {
   return (
-    <div>
+    <div className="relative overflow-hidden">
+      {/* Decorative floating orbs */}
+      <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
+        <div
+          className="orb"
+          style={{
+            width: 500,
+            height: 500,
+            background: "oklch(0.85 0.1 55 / 0.35)",
+            top: "-10%",
+            right: "-5%",
+          }}
+        />
+        <div
+          className="orb"
+          style={{
+            width: 400,
+            height: 400,
+            background: "oklch(0.87 0.08 280 / 0.3)",
+            top: "30%",
+            left: "-8%",
+          }}
+        />
+        <div
+          className="orb"
+          style={{
+            width: 350,
+            height: 350,
+            background: "oklch(0.88 0.07 180 / 0.25)",
+            bottom: "5%",
+            right: "10%",
+          }}
+        />
+      </div>
+
       <Header />
 
       {/* Hero */}
-      <section className="mx-auto max-w-6xl px-6 pt-14 pb-10 md:pt-20 md:pb-16">
+      <section className="relative mx-auto max-w-6xl px-6 pt-14 pb-10 md:pt-20 md:pb-16">
         <div className="mx-auto max-w-3xl text-center">
           <div className="inline-flex items-center gap-2 rounded-full border border-border bg-white/60 px-3 py-1 text-xs font-medium text-muted-foreground">
             <Sparkles className="h-3.5 w-3.5 text-primary" />
