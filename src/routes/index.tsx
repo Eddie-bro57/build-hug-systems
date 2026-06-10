@@ -26,8 +26,17 @@ export const Route = createFileRoute("/")({
 });
 
 function Home() {
+  const { user } = useAuth();
+  const [authOpen, setAuthOpen] = useState(false);
+  const [authMode, setAuthMode] = useState<"signup" | "signin">("signup");
+  const openAuth = (mode: "signup" | "signin") => {
+    setAuthMode(mode);
+    setAuthOpen(true);
+  };
+
   return (
     <div className="relative overflow-hidden">
+
       {/* Decorative floating orbs */}
       <div
         className="pointer-events-none absolute inset-0 -z-10 overflow-hidden transition-opacity duration-200"
