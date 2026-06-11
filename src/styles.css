@@ -38,8 +38,7 @@
 :root {
   --radius: 0.85rem;
 
-  /* Warm cream base with soft depth */
-  --background: oklch(0.97 0.01 85);
+  --background: oklch(0.98 0.008 80);
   --foreground: oklch(0.18 0.04 260);
   --surface: oklch(1 0 0);
 
@@ -49,25 +48,25 @@
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.18 0.04 260);
 
-  /* Rich coral-cinnamon primary */
-  --primary: oklch(0.52 0.18 35);
+  /* Confident coral primary */
+  --primary: oklch(0.55 0.19 28);
   --primary-foreground: oklch(0.99 0 0);
 
   --secondary: oklch(0.96 0.02 70);
   --secondary-foreground: oklch(0.25 0.05 30);
 
-  --muted: oklch(0.95 0.015 80);
+  --muted: oklch(0.96 0.01 80);
   --muted-foreground: oklch(0.5 0.03 260);
 
-  --accent: oklch(0.92 0.05 60);
+  --accent: oklch(0.93 0.05 60);
   --accent-foreground: oklch(0.25 0.05 30);
 
   --destructive: oklch(0.58 0.24 27);
   --destructive-foreground: oklch(0.99 0 0);
 
-  --border: oklch(0.88 0.015 80);
-  --input: oklch(0.93 0.01 80);
-  --ring: oklch(0.52 0.18 35);
+  --border: oklch(0.9 0.012 80);
+  --input: oklch(0.94 0.01 80);
+  --ring: oklch(0.55 0.19 28);
 }
 
 @layer base {
@@ -79,29 +78,23 @@
     min-height: 100vh;
     position: relative;
   }
-  /* Layered glow gradients — scaled by --bg-glow (0..1) */
   body::before {
     content: "";
     position: fixed;
     inset: 0;
     z-index: -1;
     pointer-events: none;
-    opacity: var(--bg-glow, 1);
-    transition: opacity 200ms ease;
     background:
-      radial-gradient(1200px 700px at 95% -5%, oklch(0.88 0.1 55 / 0.45), transparent 65%),
-      radial-gradient(1000px 600px at -5% 5%, oklch(0.88 0.08 280 / 0.35), transparent 60%),
-      radial-gradient(900px 600px at 105% 95%, oklch(0.88 0.07 180 / 0.3), transparent 60%),
-      radial-gradient(700px 500px at 20% 60%, oklch(0.9 0.06 20 / 0.2), transparent 55%),
-      radial-gradient(800px 500px at 5% 90%, oklch(0.92 0.04 70 / 0.25), transparent 55%);
+      radial-gradient(900px 600px at 95% -5%, oklch(0.9 0.08 45 / 0.35), transparent 65%),
+      radial-gradient(900px 600px at -5% 5%, oklch(0.9 0.06 280 / 0.25), transparent 60%),
+      radial-gradient(700px 500px at 50% 110%, oklch(0.92 0.05 180 / 0.25), transparent 60%);
   }
   h1, h2, h3 { letter-spacing: -0.02em; }
 }
 
-
 @layer utilities {
   .glass {
-    background: color-mix(in oklab, white 65%, transparent);
+    background: color-mix(in oklab, white 70%, transparent);
     backdrop-filter: blur(14px) saturate(140%);
     border-bottom: 1px solid color-mix(in oklab, white 50%, transparent);
   }
@@ -112,7 +105,6 @@
       0 1px 0 color-mix(in oklab, white 70%, transparent) inset,
       0 12px 40px -20px oklch(0.2 0.05 260 / 0.18);
   }
-  /* Floating decorative orbs for use in page backgrounds */
   .orb {
     position: absolute;
     border-radius: 50%;
