@@ -14,6 +14,178 @@ export type Database = {
   }
   public: {
     Tables: {
+      challenges: {
+        Row: {
+          active_on: string
+          category: string
+          created_at: string
+          description: string
+          guide_id: string | null
+          id: string
+          title: string
+        }
+        Insert: {
+          active_on?: string
+          category: string
+          created_at?: string
+          description: string
+          guide_id?: string | null
+          id?: string
+          title: string
+        }
+        Update: {
+          active_on?: string
+          category?: string
+          created_at?: string
+          description?: string
+          guide_id?: string | null
+          id?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "challenges_guide_id_fkey"
+            columns: ["guide_id"]
+            isOneToOne: false
+            referencedRelation: "guides"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      guide_progress: {
+        Row: {
+          completed_at: string | null
+          completed_steps: Json
+          created_at: string
+          guide_id: string
+          id: string
+          is_completed: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          completed_steps?: Json
+          created_at?: string
+          guide_id: string
+          id?: string
+          is_completed?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          completed_steps?: Json
+          created_at?: string
+          guide_id?: string
+          id?: string
+          is_completed?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guide_progress_guide_id_fkey"
+            columns: ["guide_id"]
+            isOneToOne: false
+            referencedRelation: "guides"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      guides: {
+        Row: {
+          author_id: string | null
+          category: string
+          created_at: string
+          difficulty: string
+          hero_image: string | null
+          id: string
+          is_published: boolean
+          materials: Json
+          slug: string
+          steps: Json
+          summary: string
+          time_minutes: number
+          tips: Json
+          title: string
+          updated_at: string
+          video_query: string | null
+          views: number
+        }
+        Insert: {
+          author_id?: string | null
+          category: string
+          created_at?: string
+          difficulty?: string
+          hero_image?: string | null
+          id?: string
+          is_published?: boolean
+          materials?: Json
+          slug: string
+          steps?: Json
+          summary: string
+          time_minutes?: number
+          tips?: Json
+          title: string
+          updated_at?: string
+          video_query?: string | null
+          views?: number
+        }
+        Update: {
+          author_id?: string | null
+          category?: string
+          created_at?: string
+          difficulty?: string
+          hero_image?: string | null
+          id?: string
+          is_published?: boolean
+          materials?: Json
+          slug?: string
+          steps?: Json
+          summary?: string
+          time_minutes?: number
+          tips?: Json
+          title?: string
+          updated_at?: string
+          video_query?: string | null
+          views?: number
+        }
+        Relationships: []
+      }
+      learning_paths: {
+        Row: {
+          category: string
+          created_at: string
+          description: string
+          guide_ids: Json
+          hero_image: string | null
+          id: string
+          slug: string
+          title: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          description: string
+          guide_ids?: Json
+          hero_image?: string | null
+          id?: string
+          slug: string
+          title: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string
+          guide_ids?: Json
+          hero_image?: string | null
+          id?: string
+          slug?: string
+          title?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -37,6 +209,32 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      saved_guides: {
+        Row: {
+          guide_id: string
+          saved_at: string
+          user_id: string
+        }
+        Insert: {
+          guide_id: string
+          saved_at?: string
+          user_id: string
+        }
+        Update: {
+          guide_id?: string
+          saved_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "saved_guides_guide_id_fkey"
+            columns: ["guide_id"]
+            isOneToOne: false
+            referencedRelation: "guides"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
