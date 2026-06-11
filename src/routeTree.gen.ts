@@ -9,21 +9,9 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as SavedRouteImport } from './routes/saved'
-import { Route as GuideRouteImport } from './routes/guide'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CategorySlugRouteImport } from './routes/category.$slug'
 
-const SavedRoute = SavedRouteImport.update({
-  id: '/saved',
-  path: '/saved',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const GuideRoute = GuideRouteImport.update({
-  id: '/guide',
-  path: '/guide',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -37,54 +25,32 @@ const CategorySlugRoute = CategorySlugRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/guide': typeof GuideRoute
-  '/saved': typeof SavedRoute
   '/category/$slug': typeof CategorySlugRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/guide': typeof GuideRoute
-  '/saved': typeof SavedRoute
   '/category/$slug': typeof CategorySlugRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/guide': typeof GuideRoute
-  '/saved': typeof SavedRoute
   '/category/$slug': typeof CategorySlugRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/guide' | '/saved' | '/category/$slug'
+  fullPaths: '/' | '/category/$slug'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/guide' | '/saved' | '/category/$slug'
-  id: '__root__' | '/' | '/guide' | '/saved' | '/category/$slug'
+  to: '/' | '/category/$slug'
+  id: '__root__' | '/' | '/category/$slug'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  GuideRoute: typeof GuideRoute
-  SavedRoute: typeof SavedRoute
   CategorySlugRoute: typeof CategorySlugRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/saved': {
-      id: '/saved'
-      path: '/saved'
-      fullPath: '/saved'
-      preLoaderRoute: typeof SavedRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/guide': {
-      id: '/guide'
-      path: '/guide'
-      fullPath: '/guide'
-      preLoaderRoute: typeof GuideRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/': {
       id: '/'
       path: '/'
@@ -104,10 +70,18 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  GuideRoute: GuideRoute,
-  SavedRoute: SavedRoute,
   CategorySlugRoute: CategorySlugRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
