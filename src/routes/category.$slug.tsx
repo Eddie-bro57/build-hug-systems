@@ -1,8 +1,10 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import { ArrowLeft } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { ArrowLeft, ArrowRight, Loader2 } from "lucide-react";
+import { TopBar } from "@/components/TopBar";
+import { BottomNav } from "@/components/BottomNav";
 import { categories, getCategory } from "@/lib/categories";
-import { Header } from "@/components/Header";
-import { SearchBar } from "@/components/SearchBar";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/category/$slug")({
   loader: ({ params }) => {
@@ -29,11 +31,25 @@ export const Route = createFileRoute("/category/$slug")({
 
 function CategoryPage() {
   const { category } = Route.useLoaderData();
+  const guides = useQuery({
+    queryKey: ["guides-by-cat", category.slug],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("guides")
+        .select("id, title, summary, difficulty, time_minutes")
+        .eq("is_published", true)
+        .eq("category", category.slug)
+        .order("created_at", { ascending: false })
+        .limit(30);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
 
   return (
-    <div>
-      <Header />
-      <section className="mx-auto max-w-4xl px-6 py-12">
+    <div className="min-h-screen pb-20 md:pb-0">
+      <TopBar />
+      <section className="mx-auto max-w-4xl px-5 py-8">
         <Link
           to="/"
           className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
@@ -42,45 +58,80 @@ function CategoryPage() {
         </Link>
 
         <div
-          className={`mt-6 overflow-hidden rounded-3xl bg-gradient-to-br ${category.gradient} p-8 text-white shadow-lg`}
+          className={`mt-5 overflow-hidden rounded-3xl bg-gradient-to-br ${category.gradient} p-7 text-white shadow-lg`}
         >
-          <div className="text-6xl">{category.emoji}</div>
+          <div className="text-5xl">{category.emoji}</div>
           <h1 className="mt-3 text-3xl font-extrabold md:text-4xl">{category.name}</h1>
           <p className="mt-2 max-w-lg text-white/90">{category.description}</p>
         </div>
 
-        <div className="mt-8">
+        <div className="mt-6">
           <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-            Search in {category.name}
+            Popular searches
           </h2>
-          <SearchBar
-            size="lg"
-            category={category.slug}
-            placeholder={`Search ${category.name.toLowerCase()}…`}
-          />
-        </div>
-
-        <div className="mt-10">
-          <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-            Popular in this category
-          </h3>
-          <div className="grid gap-3 sm:grid-cols-2">
-            {category.examples.map((ex: string) => (
+          <div className="flex flex-wrap gap-2">
+            {category.examples.map((ex) => (
               <Link
                 key={ex}
-                to="/guide"
+                to="/search"
                 search={{ q: ex, c: category.slug }}
-                className="card-elev rounded-2xl p-4 text-left transition hover:-translate-y-0.5"
+                className="rounded-full border border-border bg-white px-3 py-1.5 text-sm hover:bg-muted"
               >
-                <div className="font-medium">{ex}</div>
-                <div className="mt-1 text-xs text-muted-foreground">Tap to get step-by-step instructions</div>
+                {ex}
               </Link>
             ))}
           </div>
         </div>
 
-        <div className="mt-12">
-          <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+        <div className="mt-8">
+          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+            Guides in this category
+          </h2>
+          {guides.isLoading ? (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" /> Loading…
+            </div>
+          ) : guides.data && guides.data.length > 0 ? (
+            <ul className="space-y-2">
+              {guides.data.map((g) => (
+                <li key={g.id}>
+                  <Link
+                    to="/guide/$id"
+                    params={{ id: g.id }}
+                    className="card-elev block rounded-2xl p-4 transition hover:-translate-y-0.5"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="text-xs uppercase tracking-wider text-muted-foreground">
+                          {g.difficulty} · {g.time_minutes} min
+                        </div>
+                        <div className="mt-1 truncate font-semibold">{g.title}</div>
+                        <div className="mt-1 line-clamp-2 text-sm text-muted-foreground">
+                          {g.summary}
+                        </div>
+                      </div>
+                      <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+                    </div>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <div className="card-elev rounded-2xl p-5 text-sm text-muted-foreground">
+              No guides yet in {category.name}.{" "}
+              <Link
+                to="/search"
+                search={{ q: `Beginner ${category.name.toLowerCase()} skill`, c: category.slug }}
+                className="text-primary hover:underline"
+              >
+                Generate the first one →
+              </Link>
+            </div>
+          )}
+        </div>
+
+        <div className="mt-10">
+          <h3 className="mb-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
             Other categories
           </h3>
           <div className="flex flex-wrap gap-2">
@@ -91,7 +142,7 @@ function CategoryPage() {
                   key={c.slug}
                   to="/category/$slug"
                   params={{ slug: c.slug }}
-                  className="rounded-full border border-border bg-white/70 px-3 py-1.5 text-sm hover:bg-white"
+                  className="rounded-full border border-border bg-white px-3 py-1.5 text-sm hover:bg-muted"
                 >
                   <span className="mr-1">{c.emoji}</span> {c.name}
                 </Link>
@@ -99,6 +150,7 @@ function CategoryPage() {
           </div>
         </div>
       </section>
+      <BottomNav />
     </div>
   );
 }

@@ -1,160 +1,191 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, BookOpen, CheckCircle2, Clock, Heart, PlayCircle, Sparkles, UserPlus } from "lucide-react";
-import { useState } from "react";
-import { categories, getCategory } from "@/lib/categories";
-import { Header } from "@/components/Header";
-import { SearchBar } from "@/components/SearchBar";
-import { useFavorites, useRecents } from "@/lib/storage";
-import { useAuth } from "@/hooks/useAuth";
-import { AuthModal } from "@/components/AuthModal";
-import { Button } from "@/components/ui/button";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { ArrowRight, Compass, Flame, Sparkles, Target, TrendingUp } from "lucide-react";
+import { type FormEvent, useState } from "react";
+import { TopBar } from "@/components/TopBar";
+import { BottomNav } from "@/components/BottomNav";
+import { categories } from "@/lib/categories";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "DoGuide — Step-by-step guides for almost anything" },
+      { title: "DoGuide — Learn any practical skill, step by step" },
       {
         name: "description",
         content:
-          "DoGuide gives you clear, easy-to-follow steps for any task — from cooking to coding — plus a video guide when you need it.",
+          "AI-powered, step-by-step practical guides for cooking, DIY, fitness, music, tech and more.",
       },
-      { property: "og:title", content: "DoGuide — Learn anything, step by step" },
-      { property: "og:description", content: "Clear, friendly, step-by-step guides for any task." },
     ],
   }),
   component: Home,
 });
 
 function Home() {
-  const { user } = useAuth();
-  const [authOpen, setAuthOpen] = useState(false);
-  const [authMode, setAuthMode] = useState<"signup" | "signin">("signup");
-  const openAuth = (mode: "signup" | "signin") => {
-    setAuthMode(mode);
-    setAuthOpen(true);
+  const navigate = useNavigate();
+  const [q, setQ] = useState("");
+
+  const trending = useQuery({
+    queryKey: ["trending-guides"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("guides")
+        .select("id, slug, title, summary, category, time_minutes, difficulty, views")
+        .eq("is_published", true)
+        .order("views", { ascending: false })
+        .limit(6);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const onSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    const v = q.trim();
+    if (!v) return;
+    navigate({ to: "/search", search: { q: v } });
   };
 
   return (
-    <div className="relative overflow-hidden">
-
-      {/* Decorative floating orbs */}
-      <div
-        className="pointer-events-none absolute inset-0 -z-10 overflow-hidden transition-opacity duration-200"
-        style={{ opacity: "var(--bg-orbs, 1)" }}
-      >
-
-        <div
-          className="orb"
-          style={{
-            width: 500,
-            height: 500,
-            background: "oklch(0.85 0.1 55 / 0.35)",
-            top: "-10%",
-            right: "-5%",
-          }}
-        />
-        <div
-          className="orb"
-          style={{
-            width: 400,
-            height: 400,
-            background: "oklch(0.87 0.08 280 / 0.3)",
-            top: "30%",
-            left: "-8%",
-          }}
-        />
-        <div
-          className="orb"
-          style={{
-            width: 350,
-            height: 350,
-            background: "oklch(0.88 0.07 180 / 0.25)",
-            bottom: "5%",
-            right: "10%",
-          }}
-        />
-      </div>
-
-      <Header />
+    <div className="min-h-screen pb-20 md:pb-0">
+      <TopBar showSearch={false} />
 
       {/* Hero */}
-      <section className="relative mx-auto max-w-6xl px-6 pt-14 pb-10 md:pt-20 md:pb-16">
-        <div className="mx-auto max-w-3xl text-center">
-          <div className="inline-flex items-center gap-2 rounded-full border border-border bg-white/60 px-3 py-1 text-xs font-medium text-muted-foreground">
+      <section className="mx-auto max-w-5xl px-5 pt-10 pb-8 md:pt-16">
+        <div className="text-center">
+          <div className="inline-flex items-center gap-2 rounded-full border border-border bg-white/70 px-3 py-1 text-xs font-medium text-muted-foreground">
             <Sparkles className="h-3.5 w-3.5 text-primary" />
-            AI-powered, beginner-friendly
+            AI-powered practical skills platform
           </div>
           <h1 className="mt-5 text-4xl font-extrabold tracking-tight md:text-6xl">
-            How do you want to{" "}
+            Learn anything,{" "}
             <span className="bg-gradient-to-r from-[#ff6f61] via-[#f59e0b] to-[#6366f1] bg-clip-text text-transparent">
-              do it
+              do anything
             </span>
-            ?
           </h1>
-          <p className="mx-auto mt-5 max-w-xl text-base text-muted-foreground md:text-lg">
-            Pick a category or just type a task. DoGuide gives you clear,
-            step-by-step instructions — with a video guide when you want one.
+          <p className="mx-auto mt-4 max-w-xl text-base text-muted-foreground md:text-lg">
+            Step-by-step guides for any task — with video, AI help, and progress tracking.
           </p>
 
-          <div className="mx-auto mt-8 max-w-2xl">
-            <SearchBar size="lg" placeholder="e.g. How do I bake banana bread?" />
-            <div className="mt-3 flex flex-wrap items-center justify-center gap-2 text-xs text-muted-foreground">
-              <span>Try:</span>
-              {["Tune a guitar", "Write a CV", "Unclog a drain", "Cook jollof rice"].map((s) => (
+          <form onSubmit={onSubmit} className="mx-auto mt-7 flex max-w-2xl items-center gap-2 rounded-2xl border border-border bg-white p-2 shadow-md">
+            <Sparkles className="ml-3 h-5 w-5 text-primary" />
+            <input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="e.g. How do I bake banana bread?"
+              className="flex-1 bg-transparent py-3 text-base outline-none placeholder:text-muted-foreground md:text-lg"
+            />
+            <button
+              type="submit"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground"
+            >
+              Guide me <ArrowRight className="h-4 w-4" />
+            </button>
+          </form>
+
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-xs text-muted-foreground">
+            <span>Try:</span>
+            {["Tune a guitar", "Write a CV", "Unclog a drain", "Cook jollof rice"].map((s) => (
+              <Link
+                key={s}
+                to="/search"
+                search={{ q: s }}
+                className="rounded-full border border-border bg-white/60 px-3 py-1 hover:bg-white"
+              >
+                {s}
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Daily challenge */}
+      <section className="mx-auto max-w-5xl px-5 pb-6">
+        <div className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-[#fff7ed] via-white to-[#eff6ff] p-6 md:p-8">
+          <div className="flex items-start gap-4">
+            <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-amber-100 text-amber-700">
+              <Target className="h-6 w-6" />
+            </div>
+            <div className="flex-1">
+              <div className="text-xs font-semibold uppercase tracking-wider text-amber-700">
+                Today's challenge
+              </div>
+              <div className="mt-1 text-lg font-bold md:text-xl">Learn one new practical skill in 15 minutes</div>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Pick something small you've been putting off. Knife skills, a chord change, a
+                terminal command — anything counts.
+              </p>
+              <div className="mt-3">
                 <Link
-                  key={s}
-                  to="/guide"
-                  search={{ q: s }}
-                  className="rounded-full border border-border bg-white/60 px-3 py-1 hover:bg-white"
+                  to="/search"
+                  search={{ q: "Quick 15-minute skill to learn today" }}
+                  className="inline-flex items-center gap-1 text-sm font-semibold text-primary hover:underline"
                 >
-                  {s}
+                  Find me a guide <ArrowRight className="h-4 w-4" />
                 </Link>
-              ))}
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      <RecentAndSaved />
+      {/* Trending */}
+      <section className="mx-auto max-w-5xl px-5 py-6">
+        <SectionHeader icon={<TrendingUp className="h-4 w-4" />} title="Trending guides" />
+        {trending.isLoading ? (
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="card-elev h-28 animate-pulse rounded-2xl" />
+            ))}
+          </div>
+        ) : trending.data && trending.data.length > 0 ? (
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {trending.data.map((g) => (
+              <Link
+                key={g.id}
+                to="/guide/$id"
+                params={{ id: g.id }}
+                className="card-elev group rounded-2xl p-4 transition hover:-translate-y-0.5"
+              >
+                <div className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                  <Flame className="h-3 w-3 text-rose-500" /> {g.category}
+                </div>
+                <div className="mt-1 line-clamp-2 font-semibold">{g.title}</div>
+                <div className="mt-2 line-clamp-2 text-xs text-muted-foreground">{g.summary}</div>
+                <div className="mt-3 text-[11px] font-medium text-muted-foreground">
+                  {g.difficulty} · {g.time_minutes} min
+                </div>
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <div className="card-elev rounded-2xl p-6 text-sm text-muted-foreground">
+            No trending guides yet — be the first to generate one above.
+          </div>
+        )}
+      </section>
 
       {/* Categories */}
-      <section id="categories" className="mx-auto max-w-6xl px-6 pb-16">
-        <div className="mb-6 flex items-end justify-between">
-          <div>
-            <h2 className="text-2xl font-bold tracking-tight md:text-3xl">Browse categories</h2>
-            <p className="text-sm text-muted-foreground">Pick a category to explore guides.</p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <section className="mx-auto max-w-5xl px-5 py-6">
+        <SectionHeader icon={<Compass className="h-4 w-4" />} title="Browse categories" />
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
           {categories.map((c) => (
             <Link
               key={c.slug}
               to="/category/$slug"
               params={{ slug: c.slug }}
-              className="group relative overflow-hidden rounded-2xl border border-border bg-white/70 transition hover:-translate-y-0.5 hover:shadow-lg"
+              className="group relative overflow-hidden rounded-2xl border border-border bg-white transition hover:-translate-y-0.5 hover:shadow-lg"
             >
-              <div className="relative h-36 w-full overflow-hidden">
+              <div className="relative h-28 w-full overflow-hidden md:h-32">
                 <img
                   src={c.image}
                   alt={c.name}
                   className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
                   loading="lazy"
-                  width={512}
-                  height={512}
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
-                <div className="absolute bottom-3 left-4 text-2xl font-bold text-white drop-shadow-md">
-                  {c.name}
-                </div>
-              </div>
-              <div className="p-5">
-                <div className="text-2xl">{c.emoji}</div>
-                <div className="mt-1 line-clamp-2 text-sm text-muted-foreground">
-                  {c.description}
-                </div>
-                <div className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-primary">
-                  Explore <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/55 to-transparent" />
+                <div className="absolute bottom-2 left-3 text-sm font-bold text-white drop-shadow md:text-base">
+                  {c.emoji} {c.name}
                 </div>
               </div>
             </Link>
@@ -162,212 +193,22 @@ function Home() {
         </div>
       </section>
 
-      {/* How it works */}
-      <section id="how" className="mx-auto max-w-6xl px-6 pb-24">
-        <div className="card-elev rounded-3xl p-8 md:p-12">
-          <h2 className="text-2xl font-bold md:text-3xl">How it works</h2>
-          <div className="mt-8 grid gap-6 md:grid-cols-3">
-            {[
-              {
-                icon: <BookOpen className="h-5 w-5" />,
-                title: "1. Pick or search",
-                body: "Choose a category from the home page, or type your task in the search box.",
-              },
-              {
-                icon: <Sparkles className="h-5 w-5" />,
-                title: "2. Get clear steps",
-                body: "DoGuide generates a friendly, ordered guide with materials, tips, and timing.",
-              },
-              {
-                icon: <PlayCircle className="h-5 w-5" />,
-                title: "3. Watch a video",
-                body: "Need a visual? Open the matched YouTube video right alongside the steps.",
-              },
-            ].map((s) => (
-              <div key={s.title} className="rounded-2xl border border-border bg-white/60 p-5">
-                <div className="grid h-9 w-9 place-items-center rounded-xl bg-primary/10 text-primary">
-                  {s.icon}
-                </div>
-                <div className="mt-3 font-semibold">{s.title}</div>
-                <div className="mt-1 text-sm text-muted-foreground">{s.body}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {!user && <JoinCta onSignUp={() => openAuth("signup")} onSignIn={() => openAuth("signin")} />}
-
-      <footer className="border-t border-border/60 py-8 text-center text-xs text-muted-foreground">
-        Built with DoGuide — your friendly step-by-step companion.
+      <footer className="mx-auto max-w-5xl border-t border-border/60 px-5 py-8 text-center text-xs text-muted-foreground">
+        DoGuide — practical skills, one step at a time.
       </footer>
 
-      <AuthModal open={authOpen} onOpenChange={setAuthOpen} defaultMode={authMode} />
+      <BottomNav />
     </div>
   );
 }
 
-function JoinCta({ onSignUp, onSignIn }: { onSignUp: () => void; onSignIn: () => void }) {
-  const perks = [
-    "Save guides to your library",
-    "Sync recents across devices",
-    "Personal recommendations",
-  ];
+function SectionHeader({ icon, title }: { icon: React.ReactNode; title: string }) {
   return (
-    <section id="join" className="mx-auto max-w-6xl px-6 pb-24">
-      <div className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-white/80 via-white/60 to-white/40 p-8 shadow-sm md:p-12">
-        <div
-          className="orb"
-          style={{
-            width: 400,
-            height: 400,
-            background: "oklch(0.85 0.12 35 / 0.35)",
-            top: "-20%",
-            right: "-10%",
-          }}
-        />
-        <div className="relative grid items-center gap-8 md:grid-cols-2">
-          <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-border bg-white/70 px-3 py-1 text-xs font-medium text-muted-foreground">
-              <UserPlus className="h-3.5 w-3.5 text-primary" />
-              Free account
-            </div>
-            <h2 className="mt-4 text-3xl font-bold tracking-tight md:text-4xl">
-              Create your DoGuide account
-            </h2>
-            <p className="mt-3 max-w-md text-muted-foreground">
-              Save your favorite guides, keep your recent searches in sync, and
-              get the most out of DoGuide — it only takes a moment.
-            </p>
-            <ul className="mt-5 space-y-2">
-              {perks.map((p) => (
-                <li key={p} className="flex items-center gap-2 text-sm">
-                  <CheckCircle2 className="h-4 w-4 text-primary" />
-                  <span>{p}</span>
-                </li>
-              ))}
-            </ul>
-            <div className="mt-6 flex flex-wrap items-center gap-3">
-              <Button size="lg" onClick={onSignUp}>
-                <UserPlus className="mr-2 h-4 w-4" /> Sign up — it's free
-              </Button>
-              <Button size="lg" variant="ghost" onClick={onSignIn}>
-                I already have an account
-              </Button>
-            </div>
-          </div>
-
-          <div className="card-elev rounded-2xl p-6 md:p-8">
-            <div className="flex items-center gap-3">
-              <div className="grid h-10 w-10 place-items-center rounded-xl bg-primary text-primary-foreground">
-                <Sparkles className="h-5 w-5" />
-              </div>
-              <div>
-                <div className="font-semibold">Your DoGuide library</div>
-                <div className="text-xs text-muted-foreground">A home for guides you love</div>
-              </div>
-            </div>
-            <div className="mt-5 space-y-2">
-              {["Bake banana bread", "Tune a guitar", "Write a great CV"].map((t, i) => (
-                <div
-                  key={t}
-                  className="flex items-center justify-between rounded-xl border border-border bg-white/70 px-3 py-2 text-sm"
-                  style={{ opacity: 1 - i * 0.15 }}
-                >
-                  <span className="truncate">{t}</span>
-                  <Heart className="h-4 w-4 text-rose-500" />
-                </div>
-              ))}
-            </div>
-            <p className="mt-4 text-xs text-muted-foreground">
-              Sign in from any device to access your library.
-            </p>
-          </div>
-        </div>
+    <div className="mb-3 flex items-center gap-2">
+      <div className="grid h-7 w-7 place-items-center rounded-lg bg-primary/10 text-primary">
+        {icon}
       </div>
-    </section>
+      <h2 className="text-lg font-bold tracking-tight md:text-xl">{title}</h2>
+    </div>
   );
 }
-
-
-function RecentAndSaved() {
-  const { recents, clear } = useRecents();
-  const { favorites } = useFavorites();
-  if (recents.length === 0 && favorites.length === 0) return null;
-
-  return (
-    <section className="mx-auto max-w-6xl px-6 pb-6">
-      <div className="grid gap-6 md:grid-cols-2">
-        {recents.length > 0 && (
-          <div className="card-elev rounded-2xl p-5">
-            <div className="mb-3 flex items-center justify-between">
-              <h3 className="inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                <Clock className="h-4 w-4" /> Recent
-              </h3>
-              <button
-                onClick={clear}
-                className="text-xs text-muted-foreground hover:text-foreground"
-              >
-                Clear
-              </button>
-            </div>
-            <ul className="space-y-2">
-              {recents.slice(0, 5).map((r) => {
-                const cat = r.c ? getCategory(r.c) : undefined;
-                return (
-                  <li key={`${r.q}|${r.c ?? ""}`}>
-                    <Link
-                      to="/guide"
-                      search={{ q: r.q, ...(r.c ? { c: r.c } : {}) }}
-                      className="group flex items-center justify-between gap-3 rounded-xl px-3 py-2 hover:bg-muted"
-                    >
-                      <div className="min-w-0">
-                        <div className="truncate text-sm font-medium">{r.title ?? r.q}</div>
-                        {cat && (
-                          <div className="text-xs text-muted-foreground">
-                            {cat.emoji} {cat.name}
-                          </div>
-                        )}
-                      </div>
-                      <ArrowRight className="h-4 w-4 text-muted-foreground transition group-hover:translate-x-0.5" />
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-        )}
-        {favorites.length > 0 && (
-          <div className="card-elev rounded-2xl p-5">
-            <div className="mb-3 flex items-center justify-between">
-              <h3 className="inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                <Heart className="h-4 w-4 text-rose-500" /> Saved
-              </h3>
-              <Link to="/saved" className="text-xs text-primary hover:underline">
-                See all
-              </Link>
-            </div>
-            <ul className="space-y-2">
-              {favorites.slice(0, 5).map((f) => (
-                <li key={`${f.q}|${f.c ?? ""}`}>
-                  <Link
-                    to="/guide"
-                    search={{ q: f.q, ...(f.c ? { c: f.c } : {}) }}
-                    className="flex items-center justify-between gap-3 rounded-xl px-3 py-2 hover:bg-muted"
-                  >
-                    <div className="truncate text-sm font-medium">{f.title ?? f.q}</div>
-                    <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-      </div>
-    </section>
-  );
-}
-
-
-
-
