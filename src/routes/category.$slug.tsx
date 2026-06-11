@@ -70,7 +70,7 @@ function CategoryPage() {
             Popular searches
           </h2>
           <div className="flex flex-wrap gap-2">
-            {category.examples.map((ex) => (
+            {category.examples.map((ex: string) => (
               <Link
                 key={ex}
                 to="/search"
