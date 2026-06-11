@@ -11,7 +11,7 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
-import { BackgroundControls } from "../components/BackgroundControls";
+
 
 
 function NotFoundComponent() {
@@ -79,14 +79,16 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { title: "DoGuide — Learn any practical skill, step by step" },
+      {
+        name: "description",
+        content:
+          "DoGuide is an AI-powered practical skills platform. Search any task, follow clear steps, watch a video, and ask AI when you get stuck.",
+      },
+      { property: "og:title", content: "DoGuide — Learn any practical skill" },
+      { property: "og:description", content: "AI-powered, step-by-step guides for cooking, DIY, fitness, music, tech and more." },
       { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
-      { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
     links: [
       {
@@ -122,8 +124,6 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
-      <BackgroundControls />
     </QueryClientProvider>
-
   );
 }

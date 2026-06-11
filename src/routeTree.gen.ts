@@ -9,24 +9,30 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as SavedRouteImport } from './routes/saved'
-import { Route as GuideRouteImport } from './routes/guide'
+import { Route as SearchRouteImport } from './routes/search'
+import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as GuideIdRouteImport } from './routes/guide.$id'
 import { Route as CategorySlugRouteImport } from './routes/category.$slug'
 
-const SavedRoute = SavedRouteImport.update({
-  id: '/saved',
-  path: '/saved',
+const SearchRoute = SearchRouteImport.update({
+  id: '/search',
+  path: '/search',
   getParentRoute: () => rootRouteImport,
 } as any)
-const GuideRoute = GuideRouteImport.update({
-  id: '/guide',
-  path: '/guide',
+const ProfileRoute = ProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GuideIdRoute = GuideIdRouteImport.update({
+  id: '/guide/$id',
+  path: '/guide/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CategorySlugRoute = CategorySlugRouteImport.update({
@@ -37,52 +43,62 @@ const CategorySlugRoute = CategorySlugRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/guide': typeof GuideRoute
-  '/saved': typeof SavedRoute
+  '/profile': typeof ProfileRoute
+  '/search': typeof SearchRoute
   '/category/$slug': typeof CategorySlugRoute
+  '/guide/$id': typeof GuideIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/guide': typeof GuideRoute
-  '/saved': typeof SavedRoute
+  '/profile': typeof ProfileRoute
+  '/search': typeof SearchRoute
   '/category/$slug': typeof CategorySlugRoute
+  '/guide/$id': typeof GuideIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/guide': typeof GuideRoute
-  '/saved': typeof SavedRoute
+  '/profile': typeof ProfileRoute
+  '/search': typeof SearchRoute
   '/category/$slug': typeof CategorySlugRoute
+  '/guide/$id': typeof GuideIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/guide' | '/saved' | '/category/$slug'
+  fullPaths: '/' | '/profile' | '/search' | '/category/$slug' | '/guide/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/guide' | '/saved' | '/category/$slug'
-  id: '__root__' | '/' | '/guide' | '/saved' | '/category/$slug'
+  to: '/' | '/profile' | '/search' | '/category/$slug' | '/guide/$id'
+  id:
+    | '__root__'
+    | '/'
+    | '/profile'
+    | '/search'
+    | '/category/$slug'
+    | '/guide/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  GuideRoute: typeof GuideRoute
-  SavedRoute: typeof SavedRoute
+  ProfileRoute: typeof ProfileRoute
+  SearchRoute: typeof SearchRoute
   CategorySlugRoute: typeof CategorySlugRoute
+  GuideIdRoute: typeof GuideIdRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/saved': {
-      id: '/saved'
-      path: '/saved'
-      fullPath: '/saved'
-      preLoaderRoute: typeof SavedRouteImport
+    '/search': {
+      id: '/search'
+      path: '/search'
+      fullPath: '/search'
+      preLoaderRoute: typeof SearchRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/guide': {
-      id: '/guide'
-      path: '/guide'
-      fullPath: '/guide'
-      preLoaderRoute: typeof GuideRouteImport
+    '/profile': {
+      id: '/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof ProfileRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -90,6 +106,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/guide/$id': {
+      id: '/guide/$id'
+      path: '/guide/$id'
+      fullPath: '/guide/$id'
+      preLoaderRoute: typeof GuideIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/category/$slug': {
@@ -104,9 +127,10 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  GuideRoute: GuideRoute,
-  SavedRoute: SavedRoute,
+  ProfileRoute: ProfileRoute,
+  SearchRoute: SearchRoute,
   CategorySlugRoute: CategorySlugRoute,
+  GuideIdRoute: GuideIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
