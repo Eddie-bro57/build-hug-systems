@@ -292,6 +292,20 @@ function GuidePage() {
           </button>
 
           <button
+            type="button"
+            onClick={() => toggleVote.mutate()}
+            disabled={!user || toggleVote.isPending}
+            className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-2 text-sm font-medium disabled:opacity-60 ${
+              myVote.data
+                ? "border-primary bg-primary/10 text-primary"
+                : "border-border bg-white hover:bg-muted"
+            }`}
+            title={user ? "Upvote this guide" : "Sign in to upvote"}
+          >
+            <ThumbsUp className="h-4 w-4" /> {votes.data ?? 0}
+          </button>
+
+          <button
             onClick={() => setShowTrouble((v) => !v)}
             className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-white px-3 py-2 text-sm font-medium hover:bg-muted"
           >
