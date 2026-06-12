@@ -17,12 +17,15 @@ import {
   Loader2,
   PlayCircle,
   Sparkles,
+  ThumbsUp,
 } from "lucide-react";
 import { TopBar } from "@/components/TopBar";
 import { BottomNav } from "@/components/BottomNav";
+import { GuideComments } from "@/components/GuideComments";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { troubleshoot } from "@/lib/ai.functions";
+import { awardXp, checkAchievements } from "@/lib/gamification";
 
 export const Route = createFileRoute("/guide/$id")({
   loader: async ({ params }) => {
@@ -94,6 +97,7 @@ function GuidePage() {
         await supabase.from("saved_guides").delete().eq("guide_id", guide.id).eq("user_id", user.id);
       } else {
         await supabase.from("saved_guides").insert({ guide_id: guide.id, user_id: user.id });
+        await checkAchievements(user.id);
       }
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["saved", guide.id] }),
@@ -118,20 +122,35 @@ function GuidePage() {
 
   const saveProgress = useMutation({
     mutationFn: async (next: number[]) => {
-      if (!user) return;
-      const isCompleted = next.length === steps.length && steps.length > 0;
+      if (!user) return { wasCompleted: false, isNowCompleted: false };
+      const wasCompleted = progress.data?.is_completed ?? false;
+      const isNowCompleted = next.length === steps.length && steps.length > 0;
       await supabase.from("guide_progress").upsert(
         {
           user_id: user.id,
           guide_id: guide.id,
           completed_steps: next,
-          is_completed: isCompleted,
-          completed_at: isCompleted ? new Date().toISOString() : null,
+          is_completed: isNowCompleted,
+          completed_at: isNowCompleted ? new Date().toISOString() : null,
         },
         { onConflict: "user_id,guide_id" },
       );
+      return { wasCompleted, isNowCompleted };
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["progress", guide.id] }),
+    onSuccess: async (result, next) => {
+      qc.invalidateQueries({ queryKey: ["progress", guide.id] });
+      if (!user) return;
+      // award XP for newly completed step
+      const prev = (progress.data?.completed_steps as number[] | undefined) ?? [];
+      if (next.length > prev.length) {
+        await awardXp(5, guide.category);
+      }
+      // bonus when guide completed for the first time
+      if (result.isNowCompleted && !result.wasCompleted) {
+        await awardXp(50, guide.category);
+      }
+      await checkAchievements(user.id);
+    },
   });
 
   const toggleStep = (i: number) => {
@@ -143,6 +162,49 @@ function GuidePage() {
   };
 
   const pct = steps.length === 0 ? 0 : Math.round((completed.size / steps.length) * 100);
+
+  // Votes
+  const votes = useQuery({
+    queryKey: ["guide-votes", guide.id],
+    queryFn: async () => {
+      const { count } = await supabase
+        .from("guide_votes")
+        .select("user_id", { count: "exact", head: true })
+        .eq("guide_id", guide.id);
+      return count ?? 0;
+    },
+  });
+
+  const myVote = useQuery({
+    queryKey: ["my-vote", guide.id, user?.id ?? ""],
+    enabled: !!user,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("guide_votes")
+        .select("guide_id")
+        .eq("guide_id", guide.id)
+        .eq("user_id", user!.id)
+        .maybeSingle();
+      return !!data;
+    },
+  });
+
+  const toggleVote = useMutation({
+    mutationFn: async () => {
+      if (!user) throw new Error("Sign in to upvote");
+      if (myVote.data) {
+        await supabase.from("guide_votes").delete().eq("guide_id", guide.id).eq("user_id", user.id);
+      } else {
+        await supabase.from("guide_votes").insert({ guide_id: guide.id, user_id: user.id });
+        await awardXp(2);
+        await checkAchievements(user.id);
+      }
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["guide-votes", guide.id] });
+      qc.invalidateQueries({ queryKey: ["my-vote", guide.id] });
+    },
+  });
 
   const videoUrl = guide.video_query
     ? `https://www.youtube.com/embed?listType=search&list=${encodeURIComponent(guide.video_query)}`
@@ -227,6 +289,20 @@ function GuidePage() {
                 <Bookmark className="h-4 w-4" /> Save
               </>
             )}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => toggleVote.mutate()}
+            disabled={!user || toggleVote.isPending}
+            className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-2 text-sm font-medium disabled:opacity-60 ${
+              myVote.data
+                ? "border-primary bg-primary/10 text-primary"
+                : "border-border bg-white hover:bg-muted"
+            }`}
+            title={user ? "Upvote this guide" : "Sign in to upvote"}
+          >
+            <ThumbsUp className="h-4 w-4" /> {votes.data ?? 0}
           </button>
 
           <button
@@ -403,6 +479,8 @@ function GuidePage() {
             )}
           </>
         )}
+
+        <GuideComments guideId={guide.id} />
       </section>
       <BottomNav />
     </div>

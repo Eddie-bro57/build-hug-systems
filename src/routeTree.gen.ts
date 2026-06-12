@@ -12,7 +12,11 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as SearchRouteImport } from './routes/search'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as PathsIndexRouteImport } from './routes/paths.index'
+import { Route as PathsNewRouteImport } from './routes/paths.new'
+import { Route as PathSlugRouteImport } from './routes/path.$slug'
 import { Route as GuideIdRouteImport } from './routes/guide.$id'
+import { Route as CreatorHandleRouteImport } from './routes/creator.$handle'
 import { Route as CategorySlugRouteImport } from './routes/category.$slug'
 
 const SearchRoute = SearchRouteImport.update({
@@ -30,9 +34,29 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PathsIndexRoute = PathsIndexRouteImport.update({
+  id: '/paths/',
+  path: '/paths/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PathsNewRoute = PathsNewRouteImport.update({
+  id: '/paths/new',
+  path: '/paths/new',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PathSlugRoute = PathSlugRouteImport.update({
+  id: '/path/$slug',
+  path: '/path/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const GuideIdRoute = GuideIdRouteImport.update({
   id: '/guide/$id',
   path: '/guide/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CreatorHandleRoute = CreatorHandleRouteImport.update({
+  id: '/creator/$handle',
+  path: '/creator/$handle',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CategorySlugRoute = CategorySlugRouteImport.update({
@@ -46,14 +70,22 @@ export interface FileRoutesByFullPath {
   '/profile': typeof ProfileRoute
   '/search': typeof SearchRoute
   '/category/$slug': typeof CategorySlugRoute
+  '/creator/$handle': typeof CreatorHandleRoute
   '/guide/$id': typeof GuideIdRoute
+  '/path/$slug': typeof PathSlugRoute
+  '/paths/new': typeof PathsNewRoute
+  '/paths/': typeof PathsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/profile': typeof ProfileRoute
   '/search': typeof SearchRoute
   '/category/$slug': typeof CategorySlugRoute
+  '/creator/$handle': typeof CreatorHandleRoute
   '/guide/$id': typeof GuideIdRoute
+  '/path/$slug': typeof PathSlugRoute
+  '/paths/new': typeof PathsNewRoute
+  '/paths': typeof PathsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -61,20 +93,46 @@ export interface FileRoutesById {
   '/profile': typeof ProfileRoute
   '/search': typeof SearchRoute
   '/category/$slug': typeof CategorySlugRoute
+  '/creator/$handle': typeof CreatorHandleRoute
   '/guide/$id': typeof GuideIdRoute
+  '/path/$slug': typeof PathSlugRoute
+  '/paths/new': typeof PathsNewRoute
+  '/paths/': typeof PathsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/profile' | '/search' | '/category/$slug' | '/guide/$id'
+  fullPaths:
+    | '/'
+    | '/profile'
+    | '/search'
+    | '/category/$slug'
+    | '/creator/$handle'
+    | '/guide/$id'
+    | '/path/$slug'
+    | '/paths/new'
+    | '/paths/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/profile' | '/search' | '/category/$slug' | '/guide/$id'
+  to:
+    | '/'
+    | '/profile'
+    | '/search'
+    | '/category/$slug'
+    | '/creator/$handle'
+    | '/guide/$id'
+    | '/path/$slug'
+    | '/paths/new'
+    | '/paths'
   id:
     | '__root__'
     | '/'
     | '/profile'
     | '/search'
     | '/category/$slug'
+    | '/creator/$handle'
     | '/guide/$id'
+    | '/path/$slug'
+    | '/paths/new'
+    | '/paths/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -82,7 +140,11 @@ export interface RootRouteChildren {
   ProfileRoute: typeof ProfileRoute
   SearchRoute: typeof SearchRoute
   CategorySlugRoute: typeof CategorySlugRoute
+  CreatorHandleRoute: typeof CreatorHandleRoute
   GuideIdRoute: typeof GuideIdRoute
+  PathSlugRoute: typeof PathSlugRoute
+  PathsNewRoute: typeof PathsNewRoute
+  PathsIndexRoute: typeof PathsIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -108,11 +170,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/paths/': {
+      id: '/paths/'
+      path: '/paths'
+      fullPath: '/paths/'
+      preLoaderRoute: typeof PathsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/paths/new': {
+      id: '/paths/new'
+      path: '/paths/new'
+      fullPath: '/paths/new'
+      preLoaderRoute: typeof PathsNewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/path/$slug': {
+      id: '/path/$slug'
+      path: '/path/$slug'
+      fullPath: '/path/$slug'
+      preLoaderRoute: typeof PathSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/guide/$id': {
       id: '/guide/$id'
       path: '/guide/$id'
       fullPath: '/guide/$id'
       preLoaderRoute: typeof GuideIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/creator/$handle': {
+      id: '/creator/$handle'
+      path: '/creator/$handle'
+      fullPath: '/creator/$handle'
+      preLoaderRoute: typeof CreatorHandleRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/category/$slug': {
@@ -130,18 +220,12 @@ const rootRouteChildren: RootRouteChildren = {
   ProfileRoute: ProfileRoute,
   SearchRoute: SearchRoute,
   CategorySlugRoute: CategorySlugRoute,
+  CreatorHandleRoute: CreatorHandleRoute,
   GuideIdRoute: GuideIdRoute,
+  PathSlugRoute: PathSlugRoute,
+  PathsNewRoute: PathsNewRoute,
+  PathsIndexRoute: PathsIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

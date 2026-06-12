@@ -4,6 +4,8 @@ import { useState, type FormEvent } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { AuthModal } from "@/components/AuthModal";
 import { QuickFixDialog } from "@/components/QuickFixDialog";
+import { VoiceSearchButton } from "@/components/VoiceSearchButton";
+import { XpHud } from "@/components/XpHud";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -51,7 +53,7 @@ export function TopBar({ showSearch = true }: { showSearch?: boolean }) {
           </Link>
 
           {showSearch && (
-            <form onSubmit={onSubmit} className="flex flex-1 items-center">
+            <form onSubmit={onSubmit} className="flex flex-1 items-center gap-2">
               <div className="flex w-full items-center gap-2 rounded-full border border-border bg-white/80 px-4 py-2 text-sm shadow-sm">
                 <Sparkles className="h-4 w-4 text-primary" />
                 <input
@@ -61,8 +63,16 @@ export function TopBar({ showSearch = true }: { showSearch?: boolean }) {
                   className="flex-1 bg-transparent outline-none placeholder:text-muted-foreground"
                 />
               </div>
+              <VoiceSearchButton
+                onTranscript={(t) => {
+                  setQ(t);
+                  navigate({ to: "/search", search: { q: t } });
+                }}
+              />
             </form>
           )}
+
+          <XpHud />
 
           <button
             type="button"
