@@ -1,19 +1,19 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Home, Search, Bookmark, User } from "lucide-react";
+import { Home, Search, Route as RouteIcon, User } from "lucide-react";
 
 const tabs = [
-  { to: "/", label: "Home", icon: Home, match: (p: string) => p === "/" },
-  { to: "/search", label: "Search", icon: Search, match: (p: string) => p.startsWith("/search") },
-  { to: "/profile", label: "Saved", icon: Bookmark, match: (p: string) => p.startsWith("/profile") },
-  { to: "/profile", label: "Profile", icon: User, match: () => false },
-] as const;
+  { to: "/" as const, label: "Home", icon: Home, match: (p: string) => p === "/" },
+  { to: "/search" as const, label: "Search", icon: Search, match: (p: string) => p.startsWith("/search") },
+  { to: "/paths" as const, label: "Paths", icon: RouteIcon, match: (p: string) => p.startsWith("/path") },
+  { to: "/profile" as const, label: "Profile", icon: User, match: (p: string) => p.startsWith("/profile") },
+];
 
 export function BottomNav() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   return (
     <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-white/90 backdrop-blur md:hidden">
       <ul className="mx-auto flex max-w-6xl items-stretch justify-around">
-        {tabs.slice(0, 3).map((t) => {
+        {tabs.map((t) => {
           const Icon = t.icon;
           const active = t.match(pathname);
           return (
@@ -34,3 +34,4 @@ export function BottomNav() {
     </nav>
   );
 }
+
