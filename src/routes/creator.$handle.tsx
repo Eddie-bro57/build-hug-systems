@@ -104,7 +104,7 @@ function CreatorPage() {
               Skill levels
             </h2>
             <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
-              {skills.map((s) => (
+              {(skills as Array<{ category: string; xp: number; level: number }>).map((s) => (
                 <div key={s.category} className="card-elev rounded-2xl p-4">
                   <div className="text-xs uppercase tracking-wider text-muted-foreground">{s.category}</div>
                   <div className="mt-1 flex items-end justify-between">
