@@ -97,6 +97,7 @@ function GuidePage() {
         await supabase.from("saved_guides").delete().eq("guide_id", guide.id).eq("user_id", user.id);
       } else {
         await supabase.from("saved_guides").insert({ guide_id: guide.id, user_id: user.id });
+        await checkAchievements(user.id);
       }
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["saved", guide.id] }),
