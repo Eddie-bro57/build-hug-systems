@@ -479,6 +479,8 @@ function GuidePage() {
             )}
           </>
         )}
+
+        <GuideComments guideId={guide.id} />
       </section>
       <BottomNav />
     </div>
