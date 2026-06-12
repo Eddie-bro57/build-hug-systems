@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      achievements: {
+        Row: {
+          code: string
+          created_at: string
+          description: string
+          icon: string
+          id: string
+          kind: string
+          threshold: number
+          title: string
+          xp_reward: number
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          description: string
+          icon?: string
+          id?: string
+          kind?: string
+          threshold?: number
+          title: string
+          xp_reward?: number
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          description?: string
+          icon?: string
+          id?: string
+          kind?: string
+          threshold?: number
+          title?: string
+          xp_reward?: number
+        }
+        Relationships: []
+      }
       challenges: {
         Row: {
           active_on: string
@@ -52,6 +88,80 @@ export type Database = {
           },
         ]
       }
+      comment_votes: {
+        Row: {
+          comment_id: string
+          created_at: string
+          user_id: string
+        }
+        Insert: {
+          comment_id: string
+          created_at?: string
+          user_id: string
+        }
+        Update: {
+          comment_id?: string
+          created_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comment_votes_comment_id_fkey"
+            columns: ["comment_id"]
+            isOneToOne: false
+            referencedRelation: "comments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      comments: {
+        Row: {
+          body: string
+          created_at: string
+          guide_id: string
+          id: string
+          parent_id: string | null
+          updated_at: string
+          upvotes: number
+          user_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          guide_id: string
+          id?: string
+          parent_id?: string | null
+          updated_at?: string
+          upvotes?: number
+          user_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          guide_id?: string
+          id?: string
+          parent_id?: string | null
+          updated_at?: string
+          upvotes?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comments_guide_id_fkey"
+            columns: ["guide_id"]
+            isOneToOne: false
+            referencedRelation: "guides"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comments_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "comments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       guide_progress: {
         Row: {
           completed_at: string | null
@@ -86,6 +196,32 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "guide_progress_guide_id_fkey"
+            columns: ["guide_id"]
+            isOneToOne: false
+            referencedRelation: "guides"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      guide_votes: {
+        Row: {
+          created_at: string
+          guide_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          guide_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          guide_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guide_votes_guide_id_fkey"
             columns: ["guide_id"]
             isOneToOne: false
             referencedRelation: "guides"
@@ -157,56 +293,86 @@ export type Database = {
         Row: {
           category: string
           created_at: string
+          creator_id: string | null
           description: string
           guide_ids: Json
           hero_image: string | null
           id: string
+          is_published: boolean
           slug: string
           title: string
+          updated_at: string
         }
         Insert: {
           category: string
           created_at?: string
+          creator_id?: string | null
           description: string
           guide_ids?: Json
           hero_image?: string | null
           id?: string
+          is_published?: boolean
           slug: string
           title: string
+          updated_at?: string
         }
         Update: {
           category?: string
           created_at?: string
+          creator_id?: string | null
           description?: string
           guide_ids?: Json
           hero_image?: string | null
           id?: string
+          is_published?: boolean
           slug?: string
           title?: string
+          updated_at?: string
         }
         Relationships: []
       }
       profiles: {
         Row: {
           avatar_url: string | null
+          bio: string | null
           created_at: string
           display_name: string | null
+          handle: string | null
           id: string
+          last_active_date: string | null
+          level: number
+          reputation: number
+          streak_days: number
           updated_at: string
+          xp: number
         }
         Insert: {
           avatar_url?: string | null
+          bio?: string | null
           created_at?: string
           display_name?: string | null
+          handle?: string | null
           id: string
+          last_active_date?: string | null
+          level?: number
+          reputation?: number
+          streak_days?: number
           updated_at?: string
+          xp?: number
         }
         Update: {
           avatar_url?: string | null
+          bio?: string | null
           created_at?: string
           display_name?: string | null
+          handle?: string | null
           id?: string
+          last_active_date?: string | null
+          level?: number
+          reputation?: number
+          streak_days?: number
           updated_at?: string
+          xp?: number
         }
         Relationships: []
       }
@@ -236,12 +402,75 @@ export type Database = {
           },
         ]
       }
+      skill_levels: {
+        Row: {
+          category: string
+          id: string
+          level: number
+          updated_at: string
+          user_id: string
+          xp: number
+        }
+        Insert: {
+          category: string
+          id?: string
+          level?: number
+          updated_at?: string
+          user_id: string
+          xp?: number
+        }
+        Update: {
+          category?: string
+          id?: string
+          level?: number
+          updated_at?: string
+          user_id?: string
+          xp?: number
+        }
+        Relationships: []
+      }
+      user_achievements: {
+        Row: {
+          achievement_id: string
+          id: string
+          unlocked_at: string
+          user_id: string
+        }
+        Insert: {
+          achievement_id: string
+          id?: string
+          unlocked_at?: string
+          user_id: string
+        }
+        Update: {
+          achievement_id?: string
+          id?: string
+          unlocked_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_achievements_achievement_id_fkey"
+            columns: ["achievement_id"]
+            isOneToOne: false
+            referencedRelation: "achievements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      award_xp: {
+        Args: { _amount: number; _category?: string }
+        Returns: {
+          leveled_up: boolean
+          new_level: number
+          new_xp: number
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
