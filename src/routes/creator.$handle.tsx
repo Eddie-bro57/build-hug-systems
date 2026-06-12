@@ -124,7 +124,7 @@ function CreatorPage() {
               Achievements
             </h2>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
-              {achievements.map((a, i) => {
+              {(achievements as Array<{ achievement: { title: string; description: string } | null }>).map((a, i: number) => {
                 const ach = (a as { achievement: { title: string; description: string } }).achievement;
                 if (!ach) return null;
                 return (
@@ -146,7 +146,7 @@ function CreatorPage() {
               Guides
             </h2>
             <ul className="grid gap-3 sm:grid-cols-2">
-              {guides.map((g) => (
+              {(guides as Array<{ id: string; title: string; summary: string; category: string; difficulty: string; time_minutes: number }>).map((g) => (
                 <li key={g.id}>
                   <Link
                     to="/guide/$id"
@@ -172,7 +172,7 @@ function CreatorPage() {
               <RouteIcon className="h-4 w-4" /> Learning paths
             </h2>
             <ul className="grid gap-3 sm:grid-cols-2">
-              {paths.map((p) => (
+              {(paths as Array<{ id: string; slug: string; title: string; description: string; category: string }>).map((p) => (
                 <li key={p.id}>
                   <Link
                     to="/path/$slug"

@@ -80,7 +80,7 @@ function PathPage() {
               This path has no guides yet.
             </li>
           )}
-          {guides.map((g, i) => (
+          {(guides as Array<{ id: string; title: string; summary: string; category: string; difficulty: string; time_minutes: number }>).map((g, i: number) => (
             <li key={g.id}>
               <Link
                 to="/guide/$id"

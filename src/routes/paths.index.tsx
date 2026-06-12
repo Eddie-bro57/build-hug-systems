@@ -55,7 +55,7 @@ function PathsIndex() {
           </div>
         ) : (
           <ul className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {paths.map((p) => (
+            {(paths as Array<{ id: string; slug: string; title: string; description: string; category: string; guide_ids: unknown }>).map((p) => (
               <li key={p.id}>
                 <Link
                   to="/path/$slug"
