@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowRight, Compass, Flame, Sparkles, Target, TrendingUp } from "lucide-react";
+import { ArrowRight, Compass, Flame, Route as RouteIcon, Sparkles, Target, TrendingUp } from "lucide-react";
 import { type FormEvent, useState } from "react";
 import { TopBar } from "@/components/TopBar";
 import { BottomNav } from "@/components/BottomNav";
