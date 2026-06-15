@@ -51,9 +51,7 @@ export function TopBar({ showSearch = true }: { showSearch?: boolean }) {
               height={36}
             />
             <div className="hidden leading-tight sm:block">
-              <div className="text-base font-bold tracking-tight md:text-lg">
-                DoGuide
-              </div>
+              <div className="text-base font-bold tracking-tight md:text-lg">DoGuide</div>
               <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
                 Learn anything
               </div>
@@ -110,9 +108,7 @@ export function TopBar({ showSearch = true }: { showSearch?: boolean }) {
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuLabel className="truncate">
-                    {user.email}
-                  </DropdownMenuLabel>
+                  <DropdownMenuLabel className="truncate">{user.email}</DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
                     <Link to="/profile" className="cursor-pointer">
@@ -120,10 +116,7 @@ export function TopBar({ showSearch = true }: { showSearch?: boolean }) {
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onClick={() => void signOut()}
-                    className="cursor-pointer"
-                  >
+                  <DropdownMenuItem onClick={() => void signOut()} className="cursor-pointer">
                     <LogOut className="mr-2 h-4 w-4" /> Sign out
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -156,11 +149,7 @@ export function TopBar({ showSearch = true }: { showSearch?: boolean }) {
         </div>
       </header>
 
-      <AuthModal
-        open={authOpen}
-        onOpenChange={setAuthOpen}
-        defaultMode={authMode}
-      />
+      <AuthModal open={authOpen} onOpenChange={setAuthOpen} defaultMode={authMode} />
       <QuickFixDialog open={quickOpen} onOpenChange={setQuickOpen} />
     </>
   );
