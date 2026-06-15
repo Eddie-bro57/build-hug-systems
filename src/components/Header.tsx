@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
-import { Compass, Heart, LogOut, User as UserIcon } from "lucide-react";
+import { Heart, LogOut, User as UserIcon } from "lucide-react";
 import { useState } from "react";
+import logo from "@/assets/logo.png";
 import { useAuth } from "@/hooks/useAuth";
 import { AuthModal } from "@/components/AuthModal";
 import { Button } from "@/components/ui/button";
@@ -33,9 +34,13 @@ export function Header() {
       <header className="sticky top-0 z-40 glass">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <Link to="/" className="flex items-center gap-2">
-            <div className="grid h-9 w-9 place-items-center rounded-xl bg-primary text-primary-foreground shadow-md">
-              <Compass className="h-5 w-5" />
-            </div>
+            <img
+              src={logo}
+              alt="DoGuide"
+              className="h-9 w-9 rounded-xl shadow-md"
+              width={36}
+              height={36}
+            />
             <div className="leading-tight">
               <div className="text-lg font-bold tracking-tight">DoGuide</div>
               <div className="text-[11px] uppercase tracking-widest text-muted-foreground">
