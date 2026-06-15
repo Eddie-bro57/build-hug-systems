@@ -1,6 +1,7 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Compass, LogOut, Sparkles, Zap } from "lucide-react";
+import { LogOut, Sparkles, Zap } from "lucide-react";
 import { useState, type FormEvent } from "react";
+import logo from "@/assets/logo.png";
 import { useAuth } from "@/hooks/useAuth";
 import { AuthModal } from "@/components/AuthModal";
 import { QuickFixDialog } from "@/components/QuickFixDialog";
