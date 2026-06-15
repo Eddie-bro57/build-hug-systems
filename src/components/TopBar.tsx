@@ -42,9 +42,13 @@ export function TopBar({ showSearch = true }: { showSearch?: boolean }) {
       <header className="sticky top-0 z-40 glass">
         <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-3 md:gap-4 md:px-6">
           <Link to="/" className="flex shrink-0 items-center gap-2">
-            <div className="grid h-9 w-9 place-items-center rounded-xl bg-primary text-primary-foreground shadow-md">
-              <Compass className="h-5 w-5" />
-            </div>
+            <img
+              src={logo}
+              alt="DoGuide"
+              className="h-9 w-9 rounded-xl shadow-md"
+              width={36}
+              height={36}
+            />
             <div className="hidden leading-tight sm:block">
               <div className="text-base font-bold tracking-tight">DoGuide</div>
               <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
