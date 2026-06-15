@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
-import { Compass, Heart, LogOut, User as UserIcon } from "lucide-react";
+import { Heart, LogOut, User as UserIcon } from "lucide-react";
 import { useState } from "react";
+import logo from "@/assets/logo.png";
 import { useAuth } from "@/hooks/useAuth";
 import { AuthModal } from "@/components/AuthModal";
 import { Button } from "@/components/ui/button";
