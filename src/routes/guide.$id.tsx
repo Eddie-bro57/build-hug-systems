@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import {
   ArrowLeft,
+  ArrowRight,
   BookOpen,
   Bookmark,
   BookmarkCheck,
@@ -18,6 +19,7 @@ import {
   PlayCircle,
   Sparkles,
   ThumbsUp,
+  Trophy,
 } from "lucide-react";
 import { TopBar } from "@/components/TopBar";
 import { BottomNav } from "@/components/BottomNav";
@@ -26,6 +28,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { troubleshoot } from "@/lib/ai.functions";
 import { awardXp, checkAchievements } from "@/lib/gamification";
+import confetti from "canvas-confetti";
+import { toast } from "sonner";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+
 
 export const Route = createFileRoute("/guide/$id")({
   loader: async ({ params }) => {
@@ -70,10 +82,38 @@ function GuidePage() {
   const qc = useQueryClient();
   const router = useRouter();
   const [mode, setMode] = useState<"step" | "quick">("step");
+  const [showCelebration, setShowCelebration] = useState(false);
+  const [floatingXp, setFloatingXp] = useState<{ id: number; x: number; y: number }[]>([]);
+  const [chatMessages, setChatMessages] = useState<{ role: "user" | "assistant"; content: string }[]>([]);
 
   const steps = (guide.steps as Step[]) ?? [];
   const tips = (guide.tips as string[]) ?? [];
   const materials = (guide.materials as string[]) ?? [];
+
+  const triggerConfetti = () => {
+    // Left side burst
+    confetti({
+      particleCount: 80,
+      angle: 60,
+      spread: 60,
+      origin: { x: 0, y: 0.8 },
+    });
+    // Right side burst
+    confetti({
+      particleCount: 80,
+      angle: 120,
+      spread: 60,
+      origin: { x: 1, y: 0.8 },
+    });
+    // Center spray
+    setTimeout(() => {
+      confetti({
+        particleCount: 100,
+        spread: 90,
+        origin: { y: 0.65 },
+      });
+    }, 250);
+  };
 
   // Saved
   const saved = useQuery({
@@ -99,6 +139,19 @@ function GuidePage() {
         await supabase.from("saved_guides").insert({ guide_id: guide.id, user_id: user.id });
         await checkAchievements(user.id);
       }
+    },
+    onMutate: async () => {
+      if (!user) return;
+      await qc.cancelQueries({ queryKey: ["saved", guide.id, user.id] });
+      const previousSaved = qc.getQueryData<boolean>(["saved", guide.id, user.id]);
+      qc.setQueryData(["saved", guide.id, user.id], !previousSaved);
+      return { previousSaved };
+    },
+    onError: (err, variables, context: any) => {
+      if (user && context) {
+        qc.setQueryData(["saved", guide.id, user.id], context.previousSaved);
+      }
+      toast.error(err.message || "Failed to update save status.");
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["saved", guide.id] }),
   });
@@ -137,6 +190,23 @@ function GuidePage() {
       );
       return { wasCompleted, isNowCompleted };
     },
+    onMutate: async (next) => {
+      if (!user) return;
+      await qc.cancelQueries({ queryKey: ["progress", guide.id, user.id] });
+      const previousProgress = qc.getQueryData<any>(["progress", guide.id, user.id]);
+      const isNowCompleted = next.length === steps.length && steps.length > 0;
+      qc.setQueryData(["progress", guide.id, user.id], {
+        completed_steps: next,
+        is_completed: isNowCompleted,
+      });
+      return { previousProgress };
+    },
+    onError: (err, variables, context: any) => {
+      if (user && context?.previousProgress) {
+        qc.setQueryData(["progress", guide.id, user.id], context.previousProgress);
+      }
+      toast.error("Failed to save progress.");
+    },
     onSuccess: async (result, next) => {
       qc.invalidateQueries({ queryKey: ["progress", guide.id] });
       if (!user) return;
@@ -145,19 +215,57 @@ function GuidePage() {
       if (next.length > prev.length) {
         await awardXp(5, guide.category);
       }
-      // bonus when guide completed for the first time
-      if (result.isNowCompleted && !result.wasCompleted) {
-        await awardXp(50, guide.category);
+      // bonus when guide completed (either first time or completed again)
+      if (result.isNowCompleted) {
+        triggerConfetti();
+        setShowCelebration(true);
+        if (!result.wasCompleted) {
+          await awardXp(50, guide.category);
+        }
       }
       await checkAchievements(user.id);
     },
   });
 
-  const toggleStep = (i: number) => {
+  const resetProgress = useMutation({
+    mutationFn: async () => {
+      if (!user) return;
+      const { error } = await supabase
+        .from("guide_progress")
+        .delete()
+        .eq("guide_id", guide.id)
+        .eq("user_id", user.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["progress", guide.id] });
+      setShowCelebration(false);
+      toast.success("Progress reset! You can start this guide again.");
+    },
+    onError: (err: any) => {
+      toast.error(`Failed to reset progress: ${err.message}`);
+    },
+  });
+
+  const toggleStep = (i: number, e: React.MouseEvent<HTMLButtonElement>) => {
     if (!user) return;
     const next = new Set(completed);
-    if (next.has(i)) next.delete(i);
-    else next.add(i);
+    const wasCompleted = next.has(i);
+    if (wasCompleted) {
+      next.delete(i);
+    } else {
+      next.add(i);
+
+      // Trigger floating +5 XP indicator centered above target element
+      const rect = e.currentTarget.getBoundingClientRect();
+      const x = rect.left + rect.width / 2;
+      const y = rect.top;
+      const animId = Date.now() + Math.random();
+      setFloatingXp(prev => [...prev, { id: animId, x, y }]);
+      setTimeout(() => {
+        setFloatingXp(prev => prev.filter(item => item.id !== animId));
+      }, 900);
+    }
     saveProgress.mutate([...next].sort((a, b) => a - b));
   };
 
@@ -200,6 +308,25 @@ function GuidePage() {
         await checkAchievements(user.id);
       }
     },
+    onMutate: async () => {
+      if (!user) return;
+      await qc.cancelQueries({ queryKey: ["my-vote", guide.id, user.id] });
+      const previousMyVote = qc.getQueryData<boolean>(["my-vote", guide.id, user.id]);
+      qc.setQueryData(["my-vote", guide.id, user.id], !previousMyVote);
+
+      await qc.cancelQueries({ queryKey: ["guide-votes", guide.id] });
+      const previousVotes = qc.getQueryData<number>(["guide-votes", guide.id]) ?? 0;
+      qc.setQueryData(["guide-votes", guide.id], previousMyVote ? Math.max(0, previousVotes - 1) : previousVotes + 1);
+
+      return { previousMyVote, previousVotes };
+    },
+    onError: (err, variables, context: any) => {
+      if (user && context) {
+        qc.setQueryData(["my-vote", guide.id, user.id], context.previousMyVote);
+        qc.setQueryData(["guide-votes", guide.id], context.previousVotes);
+      }
+      toast.error(err.message || "Failed to update upvote.");
+    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["guide-votes", guide.id] });
       qc.invalidateQueries({ queryKey: ["my-vote", guide.id] });
@@ -215,8 +342,25 @@ function GuidePage() {
   const [problem, setProblem] = useState("");
   const callTrouble = useServerFn(troubleshoot);
   const trouble = useMutation({
-    mutationFn: (p: string) =>
-      callTrouble({ data: { guideTitle: guide.title, problem: p } }),
+    mutationFn: async (p: string) => {
+      const history = chatMessages;
+      const out = await callTrouble({
+        data: {
+          guideTitle: guide.title,
+          problem: p,
+          history,
+        },
+      });
+      return { question: p, answer: out.text };
+    },
+    onSuccess: (res) => {
+      setChatMessages(prev => [
+        ...prev,
+        { role: "user", content: res.question },
+        { role: "assistant", content: res.answer }
+      ]);
+      setProblem("");
+    },
   });
 
   useEffect(() => {
@@ -327,44 +471,158 @@ function GuidePage() {
           </div>
         )}
 
-        {showTrouble && (
-          <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50/60 p-4">
-            <div className="flex items-center gap-2 text-sm font-semibold text-amber-900">
-              <HelpCircle className="h-4 w-4" /> AI troubleshooter
+        {user && pct === 100 && (
+          <div className="mt-4 overflow-hidden rounded-2xl border border-emerald-100 bg-gradient-to-r from-emerald-50/50 to-teal-50/50 p-4 shadow-[0_4px_20px_rgba(16,185,129,0.05)]">
+            <div className="flex items-start gap-3">
+              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-emerald-500 text-white shadow-md shadow-emerald-500/20">
+                <Trophy className="h-5 w-5 animate-bounce" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="font-bold text-emerald-900 text-sm md:text-base">Guide Mastered!</h3>
+                <p className="mt-0.5 text-xs md:text-sm text-emerald-700/95 leading-relaxed">
+                  You completed all steps in this guide. Practice makes perfect—feel free to reset progress if you want to run through it again.
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button
+                    onClick={() => resetProgress.mutate()}
+                    disabled={resetProgress.isPending}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white shadow hover:bg-emerald-700 disabled:opacity-60 transition"
+                  >
+                    {resetProgress.isPending ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      "Reset & Restart"
+                    )}
+                  </button>
+                  <button
+                    onClick={() => triggerConfetti()}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-white px-3 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-50 transition"
+                  >
+                    <Sparkles className="h-3.5 w-3.5" /> Celebrate again
+                  </button>
+                </div>
+              </div>
             </div>
+          </div>
+        )}
+
+        {showTrouble && (
+          <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50/40 p-4">
+            <div className="flex items-center justify-between gap-2 border-b border-amber-200/50 pb-2">
+              <div className="flex items-center gap-2 text-sm font-bold text-amber-900">
+                <HelpCircle className="h-4 w-4" /> AI Troubleshooter Chat
+              </div>
+              {chatMessages.length > 0 && (
+                <button
+                  onClick={() => setChatMessages([])}
+                  className="text-xs font-bold text-amber-700 hover:text-amber-900 hover:underline"
+                >
+                  Clear history
+                </button>
+              )}
+            </div>
+
+            {/* Chat history list */}
+            <div className="mt-3 max-h-[300px] overflow-y-auto space-y-3 pr-1">
+              {chatMessages.length === 0 ? (
+                <p className="text-xs text-amber-800/80 italic">
+                  Having difficulty completing a step? Ask a question or type what went wrong to get tailored diagnostic help.
+                </p>
+              ) : (
+                chatMessages.map((msg, idx) => {
+                  const isUser = msg.role === "user";
+                  return (
+                    <div
+                      key={idx}
+                      className={`flex ${isUser ? "justify-end" : "justify-start"}`}
+                    >
+                      <div
+                        className={`max-w-[85%] rounded-2xl px-3.5 py-2 text-sm leading-relaxed shadow-[0_1px_4px_rgba(0,0,0,0.02)] ${
+                          isUser
+                            ? "bg-amber-600 text-white rounded-br-sm"
+                            : "bg-white text-slate-800 border border-slate-100 rounded-bl-sm"
+                        }`}
+                      >
+                        {!isUser && (
+                          <div className="flex items-center gap-1 text-[10px] text-amber-600 font-bold uppercase tracking-wider mb-1">
+                            <Sparkles className="h-2.5 w-2.5 animate-pulse" /> DoGuide AI
+                          </div>
+                        )}
+                        <pre className="whitespace-pre-wrap font-sans text-sm">{msg.content}</pre>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+
+              {/* Waiting indicator */}
+              {trouble.isPending && (
+                <div className="flex justify-start">
+                  <div className="rounded-2xl bg-white border border-slate-100 px-3.5 py-2 shadow-sm text-sm rounded-bl-sm">
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <Loader2 className="h-3 w-3 animate-spin text-amber-600" />
+                      AI is typing…
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* AI Suggestion pills */}
+            {chatMessages.length === 0 && (
+              <div className="mt-3.5 flex flex-wrap gap-1.5">
+                {[
+                  "Are there alternative materials?",
+                  "I'm stuck on Step 1, what do I do?",
+                  "Give me safety tips.",
+                ].map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => {
+                      setProblem(s);
+                      trouble.mutate(s);
+                    }}
+                    className="rounded-full bg-white px-2.5 py-1 text-xs font-medium text-amber-800 hover:bg-amber-100/40 border border-amber-200 transition"
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Chat message input form */}
             <form
               onSubmit={(e) => {
                 e.preventDefault();
                 if (problem.trim()) trouble.mutate(problem.trim());
               }}
-              className="mt-2 flex gap-2"
+              className="mt-3 flex gap-2"
             >
               <input
                 value={problem}
                 onChange={(e) => setProblem(e.target.value)}
-                placeholder="Describe what went wrong…"
-                className="flex-1 rounded-lg border border-amber-200 bg-white px-3 py-2 text-sm outline-none"
+                placeholder="Ask what to do next…"
+                className="flex-1 rounded-lg border border-amber-200 bg-white px-3 py-2 text-sm outline-none placeholder:text-amber-800/40 focus:ring-2 focus:ring-amber-500/20"
+                disabled={trouble.isPending}
               />
               <button
                 type="submit"
                 disabled={trouble.isPending || !problem.trim()}
-                className="rounded-lg bg-amber-600 px-3 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                className="rounded-lg bg-amber-600 px-3.5 py-2 text-sm font-semibold text-white shadow hover:bg-amber-700 disabled:opacity-60 transition"
               >
-                {trouble.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Ask"}
+                Send
               </button>
             </form>
             {trouble.isError && (
               <p className="mt-2 text-xs text-destructive">{(trouble.error as Error).message}</p>
-            )}
-            {trouble.data && (
-              <pre className="mt-3 whitespace-pre-wrap text-sm text-amber-900">{trouble.data.text}</pre>
             )}
           </div>
         )}
 
         {/* Quick mode */}
         {mode === "quick" ? (
-          <div className="card-elev mt-6 rounded-2xl p-5">
+          <div className="card-elev premium-card mt-6 rounded-2xl p-5">
             <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
               Quick version
             </h2>
@@ -387,7 +645,7 @@ function GuidePage() {
         ) : (
           <>
             {materials.length > 0 && (
-              <div className="card-elev mt-6 rounded-2xl p-5">
+              <div className="card-elev premium-card mt-6 rounded-2xl p-5">
                 <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
                   What you'll need
                 </h2>
@@ -408,11 +666,11 @@ function GuidePage() {
                 {steps.map((s, i) => {
                   const done = completed.has(i);
                   return (
-                    <li key={i} className={`card-elev rounded-2xl p-4 transition ${done ? "opacity-70" : ""}`}>
+                    <li key={i} className={`card-elev premium-card rounded-2xl p-4 transition ${done ? "opacity-70" : ""}`}>
                       <div className="flex items-start gap-3">
                         <button
                           type="button"
-                          onClick={() => toggleStep(i)}
+                          onClick={(e) => toggleStep(i, e)}
                           disabled={!user}
                           className="mt-0.5 shrink-0"
                           aria-label={done ? "Mark step incomplete" : "Mark step complete"}
@@ -483,6 +741,92 @@ function GuidePage() {
         <GuideComments guideId={guide.id} />
       </section>
       <BottomNav />
+
+      <Dialog open={showCelebration} onOpenChange={setShowCelebration}>
+        <DialogContent className="sm:max-w-md overflow-hidden rounded-3xl border-0 bg-white/95 p-6 shadow-2xl backdrop-blur-xl transition duration-300">
+          <div className="absolute -left-16 -top-16 h-36 w-36 rounded-full bg-emerald-400/10 blur-3xl" />
+          <div className="absolute -right-16 -bottom-16 h-36 w-36 rounded-full bg-indigo-400/10 blur-3xl" />
+          
+          <DialogHeader className="relative flex flex-col items-center text-center">
+            <div className="relative mb-4 grid h-16 w-16 place-items-center rounded-2xl bg-gradient-to-tr from-emerald-400 to-emerald-600 text-white shadow-xl shadow-emerald-500/30">
+              <Trophy className="h-8 w-8 animate-pulse" />
+              <div className="absolute -right-1 -top-1 h-3 w-3 rounded-full bg-amber-400 animate-ping" />
+            </div>
+            <DialogTitle className="bg-gradient-to-r from-emerald-600 via-teal-600 to-indigo-600 bg-clip-text text-2xl font-extrabold tracking-tight text-transparent">
+              Skill Mastered!
+            </DialogTitle>
+            <DialogDescription className="mt-2 text-sm text-muted-foreground px-2">
+              Outstanding work! You've successfully finished every step of:
+              <span className="block mt-1 font-semibold text-slate-800 text-base">
+                “{guide.title}”
+              </span>
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="relative mt-4 rounded-2xl border border-slate-100 bg-slate-50/50 p-4 text-center">
+            <div className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
+              Rewards Earned
+            </div>
+            <div className="mt-2 flex items-center justify-center gap-4">
+              <div className="flex flex-col items-center">
+                <span className="text-2xl font-extrabold text-emerald-600">+50 XP</span>
+                <span className="text-[10px] text-muted-foreground font-medium">Completion Bonus</span>
+              </div>
+              <div className="h-8 w-px bg-slate-200" />
+              <div className="flex flex-col items-center">
+                <span className="text-2xl font-extrabold text-indigo-600">+{steps.length * 5} XP</span>
+                <span className="text-[10px] text-muted-foreground font-medium">Steps Checked</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="relative mt-6 flex flex-col gap-2.5">
+            <Link
+              to="/"
+              className="flex items-center justify-center gap-2 rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/95 transition shadow-lg shadow-primary/20"
+              onClick={() => setShowCelebration(false)}
+            >
+              Browse more guides <ArrowRight className="h-4 w-4" />
+            </Link>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  resetProgress.mutate();
+                }}
+                disabled={resetProgress.isPending}
+                className="flex items-center justify-center gap-1.5 rounded-xl border border-border bg-white py-2.5 text-xs font-semibold hover:bg-slate-50 disabled:opacity-60 transition"
+              >
+                {resetProgress.isPending ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  "Reset Progress"
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  triggerConfetti();
+                }}
+                className="flex items-center justify-center gap-1.5 rounded-xl border border-border bg-white py-2.5 text-xs font-semibold hover:bg-slate-50 transition"
+              >
+                <Sparkles className="h-3.5 w-3.5 text-amber-500" /> Confetti!
+              </button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Floating XP animations */}
+      {floatingXp.map((item) => (
+        <span
+          key={item.id}
+          style={{ left: item.x, top: item.y }}
+          className="fixed z-50 pointer-events-none -translate-x-1/2 -translate-y-full animate-float-xp font-black text-xs text-primary select-none drop-shadow"
+        >
+          +5 XP
+        </span>
+      ))}
     </div>
   );
 }

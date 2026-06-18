@@ -145,7 +145,7 @@ function Home() {
                 key={g.id}
                 to="/guide/$id"
                 params={{ id: g.id }}
-                className="card-elev group rounded-2xl p-4 transition hover:-translate-y-0.5"
+                className="card-elev premium-card group rounded-2xl p-4"
               >
                 <div className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   <Flame className="h-3 w-3 text-rose-500" /> {g.category}

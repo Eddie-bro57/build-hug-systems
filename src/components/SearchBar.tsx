@@ -21,7 +21,7 @@ export function SearchBar({
     const query = q.trim();
     if (!query) return;
     navigate({
-      to: "/guide",
+      to: "/search",
       search: { q: query, ...(category ? { c: category } : {}) },
     });
   };

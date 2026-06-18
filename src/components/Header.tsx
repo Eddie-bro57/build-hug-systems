@@ -53,7 +53,7 @@ export function Header() {
             <a href="/#categories" className="hidden hover:text-foreground md:inline">Categories</a>
             <a href="/#how" className="hidden hover:text-foreground md:inline">How it works</a>
             <Link
-              to="/saved"
+              to="/profile"
               className="inline-flex items-center gap-1.5 rounded-full border border-border bg-white/70 px-3 py-1.5 text-foreground hover:bg-white"
             >
               <Heart className="h-4 w-4 text-rose-500" /> Saved
@@ -77,7 +77,7 @@ export function Header() {
                   <DropdownMenuLabel className="truncate">{user.email}</DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
-                    <Link to="/saved" className="cursor-pointer">
+                    <Link to="/profile" className="cursor-pointer">
                       <Heart className="mr-2 h-4 w-4" /> Saved guides
                     </Link>
                   </DropdownMenuItem>

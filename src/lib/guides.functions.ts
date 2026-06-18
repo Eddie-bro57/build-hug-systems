@@ -67,6 +67,66 @@ export const generateGuide = createServerFn({ method: "POST" })
     }),
   )
   .handler(async ({ data }) => {
+    const apiKey = process.env.LOVABLE_API_KEY;
+    if (!apiKey) {
+      if (process.env.NODE_ENV === "development") {
+        console.warn("LOVABLE_API_KEY not configured. Using development mock fallback.");
+        const title = data.query.replace(/how to /i, "").replace(/how do i /i, "").replace(/\?/g, "");
+        const formattedTitle = title.charAt(0).toUpperCase() + title.slice(1);
+        const category = data.category ?? "general";
+
+        const mockGuide = {
+          title: `How to ${formattedTitle}`,
+          summary: `A development mock tutorial on ${formattedTitle.toLowerCase()} for testing the platform locally.`,
+          difficulty: "Easy" as const,
+          time_minutes: 15,
+          materials: [
+            "Basic preparation kit",
+            "General safety guidelines documentation",
+            "Local test workspace"
+          ],
+          steps: [
+            { title: "Prep & Workspace Setup", detail: `Locate a suitable area and arrange your tools to begin learning ${formattedTitle.toLowerCase()}.` },
+            { title: "Safety Inspection", detail: "Read basic guidelines and double check that all utilities and gear are fully ready." },
+            { title: "Execute Core Task", detail: "Perform the primary action item following the recommended standard practice." },
+            { title: "Verification", detail: "Test the results of your execution and resolve any obvious misalignments." },
+            { title: "Completion & Clean Up", detail: "Tidy up your space and reward yourself for completing this guide step!" }
+          ],
+          tips: [
+            "Double check safety precautions before starting.",
+            "Take regular breaks if the skill is complex."
+          ],
+          video_query: `${formattedTitle} beginners tutorial`
+        };
+
+        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        const baseSlug = slugify(mockGuide.title) || slugify(data.query) || "guide";
+        const slug = `${baseSlug}-${Math.random().toString(36).slice(2, 7)}`;
+
+        const { data: inserted, error } = await supabaseAdmin
+          .from("guides")
+          .insert({
+            slug,
+            title: mockGuide.title,
+            summary: mockGuide.summary,
+            category,
+            difficulty: mockGuide.difficulty,
+            time_minutes: mockGuide.time_minutes,
+            materials: mockGuide.materials,
+            steps: mockGuide.steps,
+            tips: mockGuide.tips,
+            video_query: mockGuide.video_query,
+            is_published: true,
+          })
+          .select("id, slug")
+          .single();
+
+        if (error) throw new Error(`Failed to save guide: ${error.message}`);
+        return inserted;
+      }
+      throw new Error("LOVABLE_API_KEY is not configured");
+    }
+
     const userPrompt =
       `Task: "${data.query}"${data.category ? `\nCategory: ${data.category}` : ""}\n\n` +
       `Return JSON: { "title", "summary" (1-2 sentences), "difficulty" (Easy|Medium|Hard), "time_minutes" (integer), "materials" (array, may be empty), "steps" (array of {title, detail}, 5-12 steps), "tips" (array of short strings), "video_query" (short YouTube search phrase) }.`;
