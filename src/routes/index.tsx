@@ -217,8 +217,13 @@ function Home() {
         </div>
       </section>
 
-      <footer className="mx-auto max-w-5xl border-t border-border/60 px-5 py-8 text-center text-xs text-muted-foreground">
-        DoGuide — practical skills, one step at a time.
+      <footer className="mx-auto max-w-5xl border-t border-border/60 px-5 py-8 text-center text-xs text-muted-foreground flex flex-col items-center gap-2">
+        <div>DoGuide — practical skills, one step at a time.</div>
+        <div className="flex gap-4">
+          <Link to="/pitch" className="underline hover:text-primary transition-colors">
+            Pitch Deck Presentation
+          </Link>
+        </div>
       </footer>
 
       <BottomNav />
