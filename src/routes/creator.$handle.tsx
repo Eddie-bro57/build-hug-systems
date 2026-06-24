@@ -1,8 +1,12 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import { Award, Flame, Route as RouteIcon, Sparkles, Trophy } from "lucide-react";
+import { Award, Flame, Route as RouteIcon, Sparkles, Trophy, Loader2 } from "lucide-react";
+import { useState } from "react";
 import { TopBar } from "@/components/TopBar";
 import { BottomNav } from "@/components/BottomNav";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { AuthModal } from "@/components/AuthModal";
+import { UnauthenticatedBlock } from "@/components/UnauthenticatedBlock";
 
 export const Route = createFileRoute("/creator/$handle")({
   loader: async ({ params }) => {
@@ -72,6 +76,37 @@ export const Route = createFileRoute("/creator/$handle")({
 
 function CreatorPage() {
   const { profile, guides, paths, achievements, skills } = Route.useLoaderData();
+  const { user, loading } = useAuth();
+  const [authOpen, setAuthOpen] = useState(false);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen pb-20 md:pb-0">
+        <TopBar />
+        <div className="flex h-[50vh] items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+        <BottomNav />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen pb-20 md:pb-0">
+        <TopBar />
+        <section className="mx-auto max-w-4xl px-5 py-8">
+          <UnauthenticatedBlock
+            title="Unlock Creator Profiles"
+            description="Sign in to explore creator profiles, view their published guides, check their skills and stats, and follow their paths."
+            onSignIn={() => setAuthOpen(true)}
+          />
+        </section>
+        <BottomNav />
+        <AuthModal open={authOpen} onOpenChange={setAuthOpen} defaultMode="signin" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen pb-20 md:pb-0">
@@ -198,6 +233,7 @@ function CreatorPage() {
         )}
       </section>
       <BottomNav />
+      <AuthModal open={authOpen} onOpenChange={setAuthOpen} defaultMode="signin" />
     </div>
   );
 }

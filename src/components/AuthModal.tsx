@@ -133,6 +133,72 @@ export function AuthModal({
           </DialogDescription>
         </DialogHeader>
 
+        {/* Demo credentials box for presentation purposes */}
+        <div className="rounded-2xl bg-amber-50/70 border border-amber-200/50 p-3 text-center">
+          <p className="text-xs text-amber-800 font-semibold mb-2">
+            Presentation Mode: Use demo credentials below
+          </p>
+          <div className="flex flex-wrap justify-center gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setMode("signin");
+                setEmail("demo@doguide.com");
+                setPassword("password123");
+              }}
+              className="inline-flex items-center gap-1 rounded-xl bg-amber-500 hover:bg-amber-600 px-3 py-1.5 text-xs font-bold text-white transition shadow-sm cursor-pointer"
+            >
+              Autofill Demo
+            </button>
+            <button
+              type="button"
+              disabled={submitting}
+              onClick={async () => {
+                setSubmitting(true);
+                setError(null);
+                setInfo(null);
+                
+                // Try logging in
+                const { error: signInErr } = await supabase.auth.signInWithPassword({
+                  email: "demo@doguide.com",
+                  password: "password123",
+                });
+                
+                if (signInErr) {
+                  // If sign in fails, attempt to sign up the demo user
+                  const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({
+                    email: "demo@doguide.com",
+                    password: "password123",
+                    options: {
+                      data: { display_name: "Demo Presenter" },
+                    },
+                  });
+                  
+                  if (signUpErr) {
+                    setError(`Demo sign-in failed. Tried auto-creating the account, but that failed too: ${signUpErr.message}`);
+                    setSubmitting(false);
+                    return;
+                  }
+                  
+                  if (signUpData.session) {
+                    onOpenChange(false);
+                    reset();
+                  } else {
+                    setInfo("Demo account auto-created! Please check credentials or sign in manually.");
+                  }
+                } else {
+                  onOpenChange(false);
+                  reset();
+                }
+                setSubmitting(false);
+              }}
+              className="inline-flex items-center gap-1 rounded-xl bg-slate-900 hover:bg-slate-800 px-3 py-1.5 text-xs font-bold text-white transition shadow-sm cursor-pointer"
+            >
+              {submitting ? "Signing in..." : "1-Click Demo Login"}
+            </button>
+          </div>
+        </div>
+
         <Tabs
           value={mode}
           onValueChange={(v) => {

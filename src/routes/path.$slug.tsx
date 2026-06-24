@@ -1,8 +1,12 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import { Route as RouteIcon } from "lucide-react";
+import { Route as RouteIcon, Loader2, ArrowLeft } from "lucide-react";
+import { useState } from "react";
 import { TopBar } from "@/components/TopBar";
 import { BottomNav } from "@/components/BottomNav";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { AuthModal } from "@/components/AuthModal";
+import { UnauthenticatedBlock } from "@/components/UnauthenticatedBlock";
 
 export const Route = createFileRoute("/path/$slug")({
   loader: async ({ params }) => {
@@ -56,6 +60,44 @@ export const Route = createFileRoute("/path/$slug")({
 
 function PathPage() {
   const { path, guides, creator } = Route.useLoaderData();
+  const { user, loading } = useAuth();
+  const [authOpen, setAuthOpen] = useState(false);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen pb-20 md:pb-0">
+        <TopBar />
+        <div className="flex h-[50vh] items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+        <BottomNav />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen pb-20 md:pb-0">
+        <TopBar />
+        <section className="mx-auto max-w-3xl px-5 py-8">
+          <Link
+            to="/paths"
+            className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft className="h-4 w-4" /> Paths
+          </Link>
+          <UnauthenticatedBlock
+            title="Unlock Learning Path"
+            description="Sign in to explore structured learning journeys, follow guides end-to-end to master complex skills, and track your progress."
+            onSignIn={() => setAuthOpen(true)}
+          />
+        </section>
+        <BottomNav />
+        <AuthModal open={authOpen} onOpenChange={setAuthOpen} defaultMode="signin" />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen pb-20 md:pb-0">
       <TopBar />

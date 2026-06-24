@@ -7,8 +7,10 @@ import { useState } from "react";
 import { TopBar } from "@/components/TopBar";
 import { BottomNav } from "@/components/BottomNav";
 import { supabase } from "@/integrations/supabase/client";
-import { generateGuide } from "@/lib/guides.functions";
+import { generateGuide, searchGuides } from "@/lib/guides.functions";
 import { categories } from "@/lib/categories";
+import { useAuth } from "@/hooks/useAuth";
+import { AuthModal } from "@/components/AuthModal";
 
 const searchSchema = z.object({
   q: z.string().min(1),
@@ -31,20 +33,15 @@ function SearchPage() {
   const navigate = useNavigate();
   const [query, setQuery] = useState(q);
   const callGenerate = useServerFn(generateGuide);
+  const callSearch = useServerFn(searchGuides);
+  const { user } = useAuth();
+  const [authOpen, setAuthOpen] = useState(false);
 
   const results = useQuery({
     queryKey: ["search", q, c ?? ""],
     queryFn: async () => {
-      let req = supabase
-        .from("guides")
-        .select("id, slug, title, summary, category, difficulty, time_minutes")
-        .eq("is_published", true)
-        .or(`title.ilike.%${q}%,summary.ilike.%${q}%`)
-        .limit(20);
-      if (c) req = req.eq("category", c);
-      const { data, error } = await req;
-      if (error) throw error;
-      return data ?? [];
+      const out = await callSearch({ data: { query: q, category: c } });
+      return out;
     },
   });
 
@@ -115,7 +112,13 @@ function SearchPage() {
               </div>
             </div>
             <button
-              onClick={() => create.mutate()}
+              onClick={() => {
+                if (!user) {
+                  setAuthOpen(true);
+                  return;
+                }
+                create.mutate();
+              }}
               disabled={create.isPending}
               className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-60"
             >
@@ -178,6 +181,7 @@ function SearchPage() {
         </div>
       </section>
       <BottomNav />
+      <AuthModal open={authOpen} onOpenChange={setAuthOpen} defaultMode="signin" />
     </div>
   );
 }

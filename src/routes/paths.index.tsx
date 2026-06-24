@@ -1,8 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Plus, Route as RouteIcon } from "lucide-react";
+import { Plus, Route as RouteIcon, Loader2 } from "lucide-react";
+import { useState } from "react";
 import { TopBar } from "@/components/TopBar";
 import { BottomNav } from "@/components/BottomNav";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { AuthModal } from "@/components/AuthModal";
+import { UnauthenticatedBlock } from "@/components/UnauthenticatedBlock";
 
 export const Route = createFileRoute("/paths/")({
   head: () => ({
@@ -30,6 +34,38 @@ export const Route = createFileRoute("/paths/")({
 
 function PathsIndex() {
   const { paths } = Route.useLoaderData();
+  const { user, loading } = useAuth();
+  const [authOpen, setAuthOpen] = useState(false);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen pb-20 md:pb-0">
+        <TopBar />
+        <div className="flex h-[50vh] items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+        <BottomNav />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen pb-20 md:pb-0">
+        <TopBar />
+        <section className="mx-auto max-w-5xl px-5 py-8">
+          <UnauthenticatedBlock
+            title="Unlock Learning Paths"
+            description="Sign in to explore structured learning journeys, follow guides end-to-end to master complex skills, and create your own paths."
+            onSignIn={() => setAuthOpen(true)}
+          />
+        </section>
+        <BottomNav />
+        <AuthModal open={authOpen} onOpenChange={setAuthOpen} defaultMode="signin" />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen pb-20 md:pb-0">
       <TopBar />

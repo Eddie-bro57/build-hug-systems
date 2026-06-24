@@ -20,6 +20,7 @@ import {
   Sparkles,
   ThumbsUp,
   Trophy,
+  Star,
 } from "lucide-react";
 import { TopBar } from "@/components/TopBar";
 import { BottomNav } from "@/components/BottomNav";
@@ -37,6 +38,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { AuthModal } from "@/components/AuthModal";
+import { UnauthenticatedBlock } from "@/components/UnauthenticatedBlock";
 
 
 export const Route = createFileRoute("/guide/$id")({
@@ -78,13 +81,18 @@ const difficultyColor: Record<string, string> = {
 
 function GuidePage() {
   const { guide } = Route.useLoaderData();
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
+  const [authOpen, setAuthOpen] = useState(false);
   const qc = useQueryClient();
   const router = useRouter();
   const [mode, setMode] = useState<"step" | "quick">("step");
   const [showCelebration, setShowCelebration] = useState(false);
   const [floatingXp, setFloatingXp] = useState<{ id: number; x: number; y: number }[]>([]);
   const [chatMessages, setChatMessages] = useState<{ role: "user" | "assistant"; content: string }[]>([]);
+  const [ratingVal, setRatingVal] = useState<number>(0);
+  const [hoverVal, setHoverVal] = useState<number>(0);
+  const [feedbackText, setFeedbackText] = useState("");
+  const [newVideoQuery, setNewVideoQuery] = useState(guide.video_query || guide.title);
 
   const steps = (guide.steps as Step[]) ?? [];
   const tips = (guide.tips as string[]) ?? [];
@@ -333,9 +341,115 @@ function GuidePage() {
     },
   });
 
-  const videoUrl = guide.video_query
-    ? `https://www.youtube.com/embed?listType=search&list=${encodeURIComponent(guide.video_query)}`
-    : null;
+  // Sync initial query state
+  useEffect(() => {
+    setNewVideoQuery(guide.video_query || guide.title);
+  }, [guide.video_query, guide.title]);
+
+  const videoRatings = useQuery({
+    queryKey: ["video-ratings", guide.id],
+    queryFn: async () => {
+      try {
+        const { data, error } = await supabase
+          .from("video_ratings" as any)
+          .select("id, rating, feedback, created_at, user_id, profiles:profiles(display_name, handle)")
+          .eq("guide_id", guide.id)
+          .order("created_at", { ascending: false });
+        if (error) throw error;
+        return (data || []) as unknown as Array<{
+          id: string;
+          rating: number;
+          feedback: string | null;
+          created_at: string;
+          user_id: string;
+          profiles: { display_name: string | null; handle: string | null } | null;
+        }>;
+      } catch (err) {
+        console.warn("video_ratings table not found, falling back to localStorage ratings", err);
+        const key = `local-video-ratings-${guide.id}`;
+        const local = localStorage.getItem(key);
+        return (local ? JSON.parse(local) : []) as Array<{
+          id: string;
+          rating: number;
+          feedback: string | null;
+          created_at: string;
+          user_id: string;
+          profiles: { display_name: string | null; handle: string | null } | null;
+        }>;
+      }
+    }
+  });
+
+  const myVideoRating = videoRatings.data?.find((r) => r.user_id === user?.id);
+
+  // Sync initial text/rating once loaded
+  useEffect(() => {
+    if (myVideoRating) {
+      setRatingVal(myVideoRating.rating);
+      setFeedbackText(myVideoRating.feedback || "");
+    }
+  }, [myVideoRating]);
+
+  const submitVideoRating = useMutation({
+    mutationFn: async ({ rating, feedback }: { rating: number; feedback: string }) => {
+      if (!user) throw new Error("Sign in to submit a rating");
+      try {
+        const { error } = await supabase
+          .from("video_ratings" as any)
+          .upsert({
+            guide_id: guide.id,
+            user_id: user.id,
+            rating,
+            feedback: feedback.trim() || null,
+          }, { onConflict: "user_id,guide_id" });
+        if (error) throw error;
+      } catch (err) {
+        console.warn("video_ratings upsert failed, saving to localStorage", err);
+        const key = `local-video-ratings-${guide.id}`;
+        const existing = JSON.parse(localStorage.getItem(key) || "[]");
+        const next = existing.filter((r: any) => r.user_id !== user.id);
+        next.push({
+          id: crypto.randomUUID?.() || Math.random().toString(),
+          user_id: user.id,
+          rating,
+          feedback: feedback.trim() || null,
+          created_at: new Date().toISOString(),
+          profiles: {
+            display_name: user.email?.split("@")[0] || "Anonymous",
+            handle: user.email?.split("@")[0] || "anonymous"
+          }
+        });
+        localStorage.setItem(key, JSON.stringify(next));
+      }
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["video-ratings", guide.id] });
+      toast.success("Thank you for your rating and feedback!");
+    },
+    onError: (err: any) => {
+      toast.error(`Failed to submit rating: ${err.message}`);
+    }
+  });
+
+  const updateVideoQuery = useMutation({
+    mutationFn: async (val: string) => {
+      const { error } = await supabase
+        .from("guides")
+        .update({ video_query: val.trim() || null })
+        .eq("id", guide.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Video reference search query updated!");
+      router.invalidate();
+    },
+    onError: (err: any) => {
+      toast.error(`Failed to update video query: ${err.message}`);
+    }
+  });
+
+  const videoQuery = guide.video_query || guide.title;
+  const videoUrl = `https://www.youtube.com/embed?listType=search&list=${encodeURIComponent(videoQuery)}`;
 
   // Troubleshooter
   const [showTrouble, setShowTrouble] = useState(false);
@@ -367,6 +481,41 @@ function GuidePage() {
     router.invalidate();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen pb-20 md:pb-0">
+        <TopBar showSearch />
+        <div className="flex h-[50vh] items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+        <BottomNav />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen pb-20 md:pb-0">
+        <TopBar showSearch />
+        <section className="mx-auto max-w-3xl px-5 py-6">
+          <Link
+            to="/"
+            className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft className="h-4 w-4" /> Home
+          </Link>
+          <UnauthenticatedBlock
+            title="Unlock Step-by-Step Guides"
+            description="Join DoGuide to access full step-by-step instructions, view tips, watch video walkthroughs, and complete learning paths."
+            onSignIn={() => setAuthOpen(true)}
+          />
+        </section>
+        <BottomNav />
+        <AuthModal open={authOpen} onOpenChange={setAuthOpen} defaultMode="signin" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen pb-20 md:pb-0">
@@ -733,6 +882,171 @@ function GuidePage() {
                     />
                   </div>
                 </div>
+
+                {/* Video Rating & Improvements Feedback System */}
+                <div className="mt-4 card-elev rounded-2xl border border-border bg-white p-5 shadow-sm space-y-5">
+                  <div>
+                    <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">
+                      Rate this video tutorial
+                    </h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Help us improve the reference video. If it is outdated or misses steps, tell us what to improve!
+                    </p>
+                  </div>
+
+                  {/* Rating Stars */}
+                  <div className="flex items-center gap-1.5">
+                    {[1, 2, 3, 4, 5].map((star) => {
+                      const active = star <= (hoverVal || ratingVal);
+                      return (
+                        <button
+                          key={star}
+                          type="button"
+                          onClick={() => {
+                            if (!user) {
+                              setAuthOpen(true);
+                              return;
+                            }
+                            setRatingVal(star);
+                          }}
+                          onMouseEnter={() => setHoverVal(star)}
+                          onMouseLeave={() => setHoverVal(0)}
+                          className="p-1 hover:scale-110 transition-transform focus:outline-none cursor-pointer"
+                        >
+                          <Star
+                            className={`h-7 w-7 ${
+                              active
+                                ? "fill-amber-400 text-amber-400"
+                                : "text-muted-foreground/30"
+                            }`}
+                          />
+                        </button>
+                      );
+                    })}
+                    {ratingVal > 0 && (
+                      <span className="ml-2 text-sm font-semibold text-slate-700">
+                        {ratingVal} {ratingVal === 1 ? "Star" : "Stars"} selected
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Feedback text area if rating is chosen */}
+                  {ratingVal > 0 && (
+                    <form
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        submitVideoRating.mutate({
+                          rating: ratingVal,
+                          feedback: feedbackText,
+                        });
+                      }}
+                      className="space-y-3 border-t border-border pt-4 animate-fade-in"
+                    >
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                          How can we improve this video? (Optional)
+                        </label>
+                        <textarea
+                          value={feedbackText}
+                          onChange={(e) => setFeedbackText(e.target.value)}
+                          placeholder="E.g., The audio quality is low, or it skips Step 4..."
+                          className="w-full min-h-[80px] rounded-xl border border-border bg-slate-50/50 p-3 text-sm placeholder:text-muted-foreground/60 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition"
+                        />
+                      </div>
+                      <button
+                        type="submit"
+                        disabled={submitVideoRating.isPending}
+                        className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-60 hover:bg-primary/95 transition shadow-md shadow-primary/10 cursor-pointer"
+                      >
+                        {submitVideoRating.isPending ? (
+                          <>
+                            <Loader2 className="h-4 w-4 animate-spin" /> Saving…
+                          </>
+                        ) : (
+                          "Submit Feedback"
+                        )}
+                      </button>
+                    </form>
+                  )}
+
+                  {/* Creator tools: Update query to improve video reference */}
+                  {user && guide.author_id === user.id && (
+                    <div className="border-t border-border pt-4 space-y-3">
+                      <div className="flex items-center gap-1.5 text-xs font-bold text-indigo-700 uppercase tracking-wider">
+                        <Sparkles className="h-4 w-4 text-indigo-500" /> Creator Tools: Improve Video Reference
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Use the community suggestions below to find a better tutorial video. Change the search term to load a better YouTube reference.
+                      </p>
+                      <form
+                        onSubmit={(e) => {
+                          e.preventDefault();
+                          if (newVideoQuery.trim()) {
+                            updateVideoQuery.mutate(newVideoQuery);
+                          }
+                        }}
+                        className="flex gap-2"
+                      >
+                        <input
+                          value={newVideoQuery}
+                          onChange={(e) => setNewVideoQuery(e.target.value)}
+                          placeholder="E.g., How to solder pipes tutorial"
+                          className="flex-1 rounded-xl border border-border bg-slate-50/50 px-3.5 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/20"
+                        />
+                        <button
+                          type="submit"
+                          disabled={updateVideoQuery.isPending || newVideoQuery.trim() === (guide.video_query || guide.title)}
+                          className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-60 transition shadow-md shadow-indigo-600/10 cursor-pointer"
+                        >
+                          {updateVideoQuery.isPending ? "Updating…" : "Update Video"}
+                        </button>
+                      </form>
+                    </div>
+                  )}
+
+                  {/* Collapsible community feedback */}
+                  {videoRatings.data && videoRatings.data.length > 0 && (
+                    <div className="border-t border-border pt-4">
+                      <details className="group">
+                        <summary className="flex items-center justify-between cursor-pointer list-none text-xs font-bold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors">
+                          <span>Community Suggestions ({videoRatings.data.length})</span>
+                          <span className="transition-transform group-open:rotate-180">▼</span>
+                        </summary>
+                        <ul className="mt-3 space-y-2.5 max-h-[220px] overflow-y-auto pr-1">
+                          {videoRatings.data.map((item) => (
+                            <li key={item.id} className="bg-slate-50/50 rounded-xl p-3 border border-slate-100">
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs font-semibold text-slate-800">
+                                  {item.profiles?.display_name || "Anonymous Learner"}
+                                </span>
+                                <div className="flex gap-0.5">
+                                  {[1, 2, 3, 4, 5].map((star) => (
+                                    <Star
+                                      key={star}
+                                      className={`h-3 w-3 ${
+                                        star <= item.rating
+                                          ? "fill-amber-400 text-amber-400"
+                                          : "text-muted-foreground/20"
+                                      }`}
+                                    />
+                                  ))}
+                                </div>
+                              </div>
+                              {item.feedback && (
+                                <p className="mt-1 text-xs text-slate-600 italic">
+                                  "{item.feedback}"
+                                </p>
+                              )}
+                              <span className="block mt-1 text-[10px] text-muted-foreground">
+                                {new Date(item.created_at).toLocaleDateString()}
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      </details>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </>
@@ -827,6 +1141,7 @@ function GuidePage() {
           +5 XP
         </span>
       ))}
+      <AuthModal open={authOpen} onOpenChange={setAuthOpen} defaultMode="signin" />
     </div>
   );
 }

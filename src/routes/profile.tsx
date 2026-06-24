@@ -8,6 +8,8 @@ import { BottomNav } from "@/components/BottomNav";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { xpToNextLevel } from "@/lib/gamification";
+import { AuthModal } from "@/components/AuthModal";
+import { UnauthenticatedBlock } from "@/components/UnauthenticatedBlock";
 
 export const Route = createFileRoute("/profile")({
   head: () => ({
@@ -18,6 +20,7 @@ export const Route = createFileRoute("/profile")({
 
 function ProfilePage() {
   const { user, loading } = useAuth();
+  const [authOpen, setAuthOpen] = useState(false);
   const qc = useQueryClient();
 
   const profile = useQuery({
@@ -131,13 +134,15 @@ function ProfilePage() {
       <section className="mx-auto max-w-3xl px-5 py-8">
         <h1 className="text-2xl font-extrabold tracking-tight md:text-3xl">My profile</h1>
 
-        {!user ? (
-          <div className="card-elev mt-6 rounded-2xl p-6 text-center">
-            <p className="text-sm text-muted-foreground">
-              Sign in to track progress and save guides.
-            </p>
-          </div>
-        ) : loading || !profile.data ? (
+        {loading ? (
+          <Loader2 className="mt-6 h-5 w-5 animate-spin text-muted-foreground" />
+        ) : !user ? (
+          <UnauthenticatedBlock
+            title="Your Learner Profile"
+            description="Sign in to view your learning dashboard, track completed guides, check your active streak, and display your unlocked achievements."
+            onSignIn={() => setAuthOpen(true)}
+          />
+        ) : !profile.data ? (
           <Loader2 className="mt-6 h-5 w-5 animate-spin text-muted-foreground" />
         ) : (
           <>
@@ -366,6 +371,7 @@ function ProfilePage() {
         )}
       </section>
       <BottomNav />
+      <AuthModal open={authOpen} onOpenChange={setAuthOpen} defaultMode="signin" />
     </div>
   );
 }

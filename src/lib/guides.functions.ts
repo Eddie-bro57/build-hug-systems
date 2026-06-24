@@ -167,3 +167,81 @@ export const generateGuide = createServerFn({ method: "POST" })
     if (error) throw new Error(`Failed to save guide: ${error.message}`);
     return inserted;
   });
+
+export const searchGuides = createServerFn({ method: "POST" })
+  .inputValidator(
+    z.object({
+      query: z.string().min(1),
+      category: z.string().optional(),
+    }),
+  )
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    let req = supabaseAdmin
+      .from("guides")
+      .select("id, slug, title, summary, category, difficulty, time_minutes")
+      .eq("is_published", true);
+    if (data.category) {
+      req = req.eq("category", data.category);
+    }
+    const { data: guides, error } = await req;
+    if (error) throw new Error(`Database error: ${error.message}`);
+
+    const apiKey = process.env.LOVABLE_API_KEY;
+
+    // Helper for keyword fallback search
+    const getFallbackResults = () => {
+      const q = data.query.toLowerCase();
+      return guides
+        .map((g) => {
+          let score = 0;
+          if (g.title.toLowerCase().includes(q)) score += 10;
+          if (g.summary.toLowerCase().includes(q)) score += 5;
+          const words = q.split(/\s+/);
+          words.forEach((w) => {
+            if (g.title.toLowerCase().includes(w)) score += 2;
+            if (g.summary.toLowerCase().includes(w)) score += 1;
+          });
+          return { ...g, score };
+        })
+        .filter((g) => g.score > 0)
+        .sort((a, b) => b.score - a.score)
+        .map(({ score, ...g }) => g)
+        .slice(0, 20);
+    };
+
+    if (!apiKey || guides.length <= 1) {
+      return getFallbackResults();
+    }
+
+    try {
+      const userPrompt =
+        `Search Query: "${data.query}"\n\n` +
+        `Available Guides:\n` +
+        guides.map((g, idx) => `[Index ${idx}] ID: ${g.id} | Title: "${g.title}" | Summary: "${g.summary}"`).join("\n") +
+        `\n\nRank the guides by relevance to the search query. Return a JSON object with a single key "rankedIds" containing the IDs of the guides in order of relevance, starting with the most relevant. Only include guides that have at least some relevance to the search query.\n\n` +
+        `Return JSON format: { "rankedIds": ["uuid-1", "uuid-2"] }`;
+
+      const content = await callAi(userPrompt);
+      const parsed = JSON.parse(content);
+      const validated = z
+        .object({
+          rankedIds: z.array(z.string()),
+        })
+        .parse(parsed);
+
+      const idMap = new Map(guides.map((g) => [g.id, g]));
+      const rankedGuides = validated.rankedIds
+        .map((id) => idMap.get(id))
+        .filter((g): g is typeof guides[number] => !!g);
+
+      if (rankedGuides.length > 0) {
+        return rankedGuides;
+      }
+    } catch (e) {
+      console.warn("Semantic search failed, falling back to keyword search:", e);
+    }
+
+    return getFallbackResults();
+  });
+

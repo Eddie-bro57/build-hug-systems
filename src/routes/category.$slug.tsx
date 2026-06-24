@@ -1,10 +1,14 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, ArrowRight, Loader2 } from "lucide-react";
+import { useState } from "react";
 import { TopBar } from "@/components/TopBar";
 import { BottomNav } from "@/components/BottomNav";
 import { categories, getCategory } from "@/lib/categories";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { AuthModal } from "@/components/AuthModal";
+import { UnauthenticatedBlock } from "@/components/UnauthenticatedBlock";
 
 export const Route = createFileRoute("/category/$slug")({
   loader: ({ params }) => {
@@ -31,6 +35,8 @@ export const Route = createFileRoute("/category/$slug")({
 
 function CategoryPage() {
   const { category } = Route.useLoaderData();
+  const { user, loading } = useAuth();
+  const [authOpen, setAuthOpen] = useState(false);
   const guides = useQuery({
     queryKey: ["guides-by-cat", category.slug],
     queryFn: async () => {
@@ -45,6 +51,41 @@ function CategoryPage() {
       return data ?? [];
     },
   });
+
+  if (loading) {
+    return (
+      <div className="min-h-screen pb-20 md:pb-0">
+        <TopBar />
+        <div className="flex h-[50vh] items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+        <BottomNav />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen pb-20 md:pb-0">
+        <TopBar />
+        <section className="mx-auto max-w-4xl px-5 py-8">
+          <Link
+            to="/"
+            className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft className="h-4 w-4" /> All categories
+          </Link>
+          <UnauthenticatedBlock
+            title={`Unlock ${category.emoji} ${category.name} Guides`}
+            description={`Sign in to explore all the step-by-step guides and interactive content in the ${category.name.toLowerCase()} category.`}
+            onSignIn={() => setAuthOpen(true)}
+          />
+        </section>
+        <BottomNav />
+        <AuthModal open={authOpen} onOpenChange={setAuthOpen} defaultMode="signin" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen pb-20 md:pb-0">

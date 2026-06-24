@@ -9,6 +9,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { categories } from "@/lib/categories";
 import { awardXp, checkAchievements } from "@/lib/gamification";
+import { AuthModal } from "@/components/AuthModal";
+import { UnauthenticatedBlock } from "@/components/UnauthenticatedBlock";
 
 export const Route = createFileRoute("/paths/new")({
   head: () => ({
@@ -30,6 +32,7 @@ function slugify(s: string) {
 function NewPath() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
+  const [authOpen, setAuthOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState(categories[0]?.name ?? "DIY");
@@ -81,18 +84,31 @@ function NewPath() {
 
   const selectedIds = useMemo(() => new Set(selected.map((g) => g.id)), [selected]);
 
-  if (loading) return null;
+  if (loading) {
+    return (
+      <div className="min-h-screen pb-20 md:pb-0">
+        <TopBar />
+        <div className="flex h-[50vh] items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+        <BottomNav />
+      </div>
+    );
+  }
+
   if (!user) {
     return (
       <div className="min-h-screen pb-20 md:pb-0">
         <TopBar />
-        <div className="mx-auto max-w-md px-5 py-16 text-center">
-          <h1 className="text-2xl font-bold">Sign in to create a path</h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Use the Sign up button in the top bar to get started.
-          </p>
-        </div>
+        <section className="mx-auto max-w-3xl px-5 py-8">
+          <UnauthenticatedBlock
+            title="Unlock Path Creation"
+            description="Sign in to create, curate, and share custom learning paths with the community."
+            onSignIn={() => setAuthOpen(true)}
+          />
+        </section>
         <BottomNav />
+        <AuthModal open={authOpen} onOpenChange={setAuthOpen} defaultMode="signin" />
       </div>
     );
   }
