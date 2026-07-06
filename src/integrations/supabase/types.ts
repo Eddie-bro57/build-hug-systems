@@ -246,6 +246,7 @@ export type Database = {
           tips: Json
           title: string
           updated_at: string
+          video_id: string | null
           video_query: string | null
           views: number
         }
@@ -265,6 +266,7 @@ export type Database = {
           tips?: Json
           title: string
           updated_at?: string
+          video_id?: string | null
           video_query?: string | null
           views?: number
         }
@@ -284,6 +286,7 @@ export type Database = {
           tips?: Json
           title?: string
           updated_at?: string
+          video_id?: string | null
           video_query?: string | null
           views?: number
         }
@@ -328,6 +331,36 @@ export type Database = {
           slug?: string
           title?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          link: string | null
+          read: boolean
+          title: string
+          user_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          link?: string | null
+          read?: boolean
+          title: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          link?: string | null
+          read?: boolean
+          title?: string
+          user_id?: string
         }
         Relationships: []
       }

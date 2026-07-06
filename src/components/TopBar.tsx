@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { LogOut, Search, Zap } from "lucide-react";
+import { Bell, LogOut, Search, Zap, Loader2 } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import logo from "@/assets/logo.png";
 import { useAuth } from "@/hooks/useAuth";
@@ -16,6 +16,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 export function TopBar({ showSearch = true }: { showSearch?: boolean }) {
   const { user, signOut } = useAuth();
@@ -24,6 +27,51 @@ export function TopBar({ showSearch = true }: { showSearch?: boolean }) {
   const [authMode, setAuthMode] = useState<"signup" | "signin">("signin");
   const [quickOpen, setQuickOpen] = useState(false);
   const [q, setQ] = useState("");
+
+  const qc = useQueryClient();
+
+  const notifications = useQuery({
+    queryKey: ["notifications", user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from("notifications" as any)
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: !!user,
+  });
+
+  const markAsRead = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from("notifications" as any)
+        .update({ read: true })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["notifications", user?.id] });
+    }
+  });
+
+  const markAllAsRead = useMutation({
+    mutationFn: async () => {
+      if (!user) return;
+      const { error } = await supabase
+        .from("notifications" as any)
+        .update({ read: true })
+        .eq("user_id", user.id)
+        .eq("read", false);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["notifications", user?.id] });
+      toast.success("All notifications marked as read!");
+    }
+  });
 
   const onSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -100,6 +148,92 @@ export function TopBar({ showSearch = true }: { showSearch?: boolean }) {
               <Zap className="h-3.5 w-3.5 text-amber-500" />{" "}
               <span className="hidden sm:inline">QuickFix</span>
             </button>
+
+            {/* Notification Bell */}
+            {user && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    className="relative grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-border bg-white text-muted-foreground transition hover:bg-muted hover:text-foreground cursor-pointer shadow-sm"
+                    aria-label="Notifications"
+                  >
+                    <Bell className="h-4 w-4" />
+                    {notifications.data && notifications.data.filter((n: any) => !n.read).length > 0 && (
+                      <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white shadow-sm ring-2 ring-white">
+                        {notifications.data.filter((n: any) => !n.read).length}
+                      </span>
+                    )}
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-80 p-0 overflow-hidden rounded-2xl border border-border/80 bg-white/95 shadow-xl backdrop-blur-md">
+                  <div className="flex items-center justify-between border-b border-border/60 bg-slate-50/50 px-4 py-3">
+                    <span className="text-sm font-bold text-slate-800">Notifications</span>
+                    {notifications.data && notifications.data.some((n: any) => !n.read) && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          markAllAsRead.mutate();
+                        }}
+                        disabled={markAllAsRead.isPending}
+                        className="text-xs font-semibold text-primary hover:underline cursor-pointer disabled:opacity-60"
+                      >
+                        Mark all as read
+                      </button>
+                    )}
+                  </div>
+                  <div className="max-h-[300px] overflow-y-auto divide-y divide-border/40">
+                    {notifications.isLoading ? (
+                      <div className="flex flex-col items-center justify-center py-8 text-center text-muted-foreground gap-2">
+                        <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                        <span className="text-xs">Loading notifications...</span>
+                      </div>
+                    ) : !notifications.data || notifications.data.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center py-10 px-4 text-center text-muted-foreground">
+                        <span className="text-2xl mb-1">🎉</span>
+                        <p className="text-xs font-semibold text-slate-700">All caught up!</p>
+                        <p className="text-[10px] text-muted-foreground mt-0.5">No new notifications right now.</p>
+                      </div>
+                    ) : (
+                      notifications.data.map((item: any) => (
+                        <div
+                          key={item.id}
+                          onClick={() => {
+                            if (!item.read) {
+                              markAsRead.mutate(item.id);
+                            }
+                            if (item.link) {
+                              navigate({ to: item.link });
+                            }
+                          }}
+                          className={`group flex items-start gap-2.5 px-4 py-3.5 text-left cursor-pointer transition-colors ${
+                            item.read ? "bg-white hover:bg-slate-50/50" : "bg-primary/5 hover:bg-primary/10"
+                          }`}
+                        >
+                          <div className="mt-1 flex h-1.5 w-1.5 shrink-0 rounded-full bg-primary transition-opacity opacity-0 group-hover:opacity-100" />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-start justify-between gap-1">
+                              <p className={`text-xs font-bold text-slate-800 leading-tight ${item.read ? "" : "text-primary"}`}>
+                                {item.title}
+                              </p>
+                              {!item.read && (
+                                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-red-500" />
+                              )}
+                            </div>
+                            <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed break-words">
+                              {item.body}
+                            </p>
+                            <span className="block text-[9px] text-muted-foreground/60 mt-1 font-medium">
+                              {new Date(item.created_at).toLocaleDateString()}
+                            </span>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
 
             <div className="hidden h-6 w-px bg-border md:block" />
 

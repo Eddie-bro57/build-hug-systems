@@ -6,13 +6,23 @@
 // You can pass additional config via defineConfig({ vite: { ... }, etc... }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
+const isGithubPages = process.env.DEPLOY_TARGET === "github_pages";
+
 export default defineConfig({
+  vite: {
+    base: isGithubPages ? "/build-hug-systems/" : "/",
+  },
   tanstackStart: {
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
     // nitro/vite builds from this
     server: { entry: "server" },
+    ...(isGithubPages ? {
+      spa: {
+        enabled: true,
+      }
+    } : {}),
   },
-  nitro: {
+  nitro: isGithubPages ? false : {
     preset: "vercel",
     output: {
       dir: ".vercel/output",

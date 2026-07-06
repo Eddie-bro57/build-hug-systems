@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { fetchYoutubeSearch } from "./video.functions";
 
 const StepSchema = z.object({
   title: z.string(),
@@ -103,6 +104,14 @@ export const generateGuide = createServerFn({ method: "POST" })
         const baseSlug = slugify(mockGuide.title) || slugify(data.query) || "guide";
         const slug = `${baseSlug}-${Math.random().toString(36).slice(2, 7)}`;
 
+        let videoId = null;
+        try {
+          const videoResults = await fetchYoutubeSearch(mockGuide.video_query);
+          videoId = videoResults[0]?.videoId || null;
+        } catch (e) {
+          console.warn("Failed to search youtube for mock video query:", e);
+        }
+
         const { data: inserted, error } = await supabaseAdmin
           .from("guides")
           .insert({
@@ -116,6 +125,7 @@ export const generateGuide = createServerFn({ method: "POST" })
             steps: mockGuide.steps,
             tips: mockGuide.tips,
             video_query: mockGuide.video_query,
+            video_id: videoId,
             is_published: true,
           })
           .select("id, slug")
@@ -152,6 +162,14 @@ export const generateGuide = createServerFn({ method: "POST" })
     const slug = `${baseSlug}-${Math.random().toString(36).slice(2, 7)}`;
     const category = data.category ?? "general";
 
+    let videoId = null;
+    try {
+      const videoResults = await fetchYoutubeSearch(guide.video_query);
+      videoId = videoResults[0]?.videoId || null;
+    } catch (e) {
+      console.warn("Failed to search youtube for generated video query:", e);
+    }
+
     const { data: inserted, error } = await supabaseAdmin
       .from("guides")
       .insert({
@@ -165,6 +183,7 @@ export const generateGuide = createServerFn({ method: "POST" })
         steps: guide.steps,
         tips: guide.tips,
         video_query: guide.video_query,
+        video_id: videoId,
         is_published: true,
       })
       .select("id, slug")

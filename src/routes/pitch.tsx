@@ -16,7 +16,8 @@ import {
   ArrowRight,
   ShieldCheck,
   Video,
-  FileText
+  FileText,
+  Sparkles
 } from "lucide-react";
 
 export const Route = createFileRoute("/pitch")({
@@ -412,124 +413,42 @@ function PitchDeckPage() {
         </div>
       )
     },
-    // Slide 8: Technical Architecture
+    // Slide 8: Thank You / Closing
     {
       id: 8,
-      title: "Technical Architecture",
-      subtitle: "Platforms, Constraints, and SLA Performance",
-      icon: <Cpu className="h-6 w-6 text-pink-500" />,
+      title: "Thank You",
+      subtitle: "Join the DoGuide Journey",
+      icon: <Sparkles className="h-6 w-6 text-amber-400 animate-pulse" />,
       content: (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 h-full items-center">
-          <div className="p-5 rounded-3xl border border-white/10 bg-white/5 backdrop-blur-md space-y-3">
-            <Smartphone className="h-8 w-8 text-pink-500" />
-            <h4 className="text-lg font-bold text-white">Client Platform</h4>
-            <p className="text-xs text-slate-300 leading-relaxed">
-              Mobile application targeting iOS 15+ and Android 10+. Built using React Native / Flutter to keep APK/IPA installer size <strong>under 50 MB</strong>.
-            </p>
+        <div className="flex flex-col items-center justify-center text-center h-full space-y-6">
+          <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-4 py-1.5 text-xs font-semibold text-primary uppercase tracking-widest animate-pulse">
+            ✨ Let's Build the Future of Learning
           </div>
-          <div className="p-5 rounded-3xl border border-white/10 bg-white/5 backdrop-blur-md space-y-3">
-            <Layers className="h-8 w-8 text-pink-500" />
-            <h4 className="text-lg font-bold text-white">Backend & Database</h4>
-            <p className="text-xs text-slate-300 leading-relaxed">
-              RESTful JSON API with a secure PostgreSQL database. AWS S3 object storage handles media assets. Implements TLS 1.2+ and AES-256 encryption.
-            </p>
-          </div>
-          <div className="p-5 rounded-3xl border border-white/10 bg-white/5 backdrop-blur-md space-y-3">
-            <Zap className="h-8 w-8 text-pink-500" />
-            <h4 className="text-lg font-bold text-white">Strict Performance SLAs</h4>
-            <ul className="text-xs text-slate-300 space-y-1.5 list-disc pl-4 leading-relaxed">
-              <li>App Launch Time: &lt; 3.0 seconds</li>
-              <li>Fuzzy Search Query: &lt; 1.5 seconds</li>
-              <li>Video Stream Buffer: &lt; 2.0 seconds</li>
-              <li>Uptime target: 99.5% availability</li>
-            </ul>
-          </div>
-        </div>
-      )
-    },
-    // Slide 9: Success Metrics
-    {
-      id: 9,
-      title: "Success Metrics",
-      subtitle: "Projections & Business Goals",
-      icon: <TrendingUp className="h-6 w-6 text-[#f59e0b]" />,
-      content: (
-        <div className="flex flex-col justify-center h-full space-y-6">
-          <h3 className="text-2xl font-bold text-white text-center">MVP Goals & Business Projections</h3>
-          <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/5">
-            <table className="w-full border-collapse text-left text-sm">
-              <thead>
-                <tr className="border-b border-white/10 bg-white/10 text-xs font-semibold uppercase tracking-wider text-slate-300">
-                  <th className="px-6 py-4">Success Metric</th>
-                  <th className="px-6 py-4">Target (Month 3)</th>
-                  <th className="px-6 py-4">Target (Month 6)</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/5 text-slate-200">
-                <tr>
-                  <td className="px-6 py-4 font-medium">Monthly Active Users (MAU)</td>
-                  <td className="px-6 py-4 text-amber-400 font-bold">5,000</td>
-                  <td className="px-6 py-4 text-emerald-400 font-bold">20,000</td>
-                </tr>
-                <tr>
-                  <td className="px-6 py-4 font-medium">Guide Completion Rate</td>
-                  <td className="px-6 py-4">≥ 60%</td>
-                  <td className="px-6 py-4 text-emerald-400 font-bold">≥ 70%</td>
-                </tr>
-                <tr>
-                  <td className="px-6 py-4 font-medium">Search Success Rate</td>
-                  <td className="px-6 py-4">≥ 75%</td>
-                  <td className="px-6 py-4 text-emerald-400 font-bold">≥ 85%</td>
-                </tr>
-                <tr>
-                  <td className="px-6 py-4 font-medium">App Store / Play Store Rating</td>
-                  <td className="px-6 py-4">≥ 4.0 / 5.0</td>
-                  <td className="px-6 py-4 text-emerald-400 font-bold">≥ 4.3 / 5.0</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )
-    },
-    // Slide 10: Future Roadmap
-    {
-      id: 10,
-      title: "Future Roadmap",
-      subtitle: "Product Evolution - Post V1.0 MVP",
-      icon: <Home className="h-6 w-6 text-[#6366f1]" />,
-      content: (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 h-full items-center">
-          {[
-            {
-              phase: "Phase 1: Social",
-              title: "Community Curation",
-              desc: "Comment sections (F08), tips sharing, and user rating systems to encourage user interaction and guide improvements."
-            },
-            {
-              phase: "Phase 2: Customization",
-              title: "Accessibility Options",
-              desc: "Text sizing adjustment options (F09), dark/light theme switching, and custom notification triggers."
-            },
-            {
-              phase: "Phase 3: Creators",
-              title: "User Guide Creation",
-              desc: "Open toolkits for verified creators to write, structure, publish, and link video walkthroughs directly on DoGuide."
-            },
-            {
-              phase: "Phase 4: Intelligence",
-              title: "AI Personalization",
-              desc: "Fuzzy search reporting analytics and machine learning personalized guide recommendations based on user profiles."
-            }
-          ].map((road, idx) => (
-            <div key={idx} className="p-5 rounded-3xl border border-white/10 bg-white/5 backdrop-blur-md flex flex-col justify-between h-48">
-              <div>
-                <span className="text-[10px] font-bold uppercase tracking-widest text-[#6366f1]">{road.phase}</span>
-                <h4 className="font-bold text-white text-base mt-1">{road.title}</h4>
-                <p className="text-xs text-slate-300 mt-2 leading-relaxed">{road.desc}</p>
-              </div>
+          <h2 className="text-4xl font-extrabold tracking-tight text-white md:text-6xl leading-none">
+            Learn Anything.{" "}
+            <span className="bg-gradient-to-r from-[#ff6f61] via-[#f59e0b] to-[#6366f1] bg-clip-text text-transparent">
+              Do Anything.
+            </span>
+          </h2>
+          <p className="text-slate-300 max-w-xl text-base md:text-lg leading-relaxed">
+            DoGuide simplifies the friction of daily life, giving everyone the confidence 
+            to execute practical skills with clarity, video guidance, and AI assistance.
+          </p>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 max-w-md w-full text-sm">
+            <div className="p-4 rounded-2xl border border-white/5 bg-white/5 backdrop-blur-md">
+              <span className="text-xs text-slate-400 block font-semibold uppercase tracking-wider">Get in Touch</span>
+              <span className="text-white font-medium mt-1 block">hello@doguide.com</span>
             </div>
-          ))}
+            <div className="p-4 rounded-2xl border border-white/5 bg-white/5 backdrop-blur-md">
+              <span className="text-xs text-slate-400 block font-semibold uppercase tracking-wider">Explore Platform</span>
+              <span className="text-[#ff6f61] hover:underline font-medium mt-1 block cursor-pointer">www.doguide.com</span>
+            </div>
+          </div>
+          
+          <div className="text-xs text-slate-500 pt-6">
+            © 2026 DoGuide Inc. All rights reserved.
+          </div>
         </div>
       )
     }

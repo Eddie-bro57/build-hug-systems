@@ -28,6 +28,7 @@ import { GuideComments } from "@/components/GuideComments";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { troubleshoot } from "@/lib/ai.functions";
+import { resolveGuideVideo, searchYoutubeVideos, updateGuideVideoId, type YouTubeVideoResult } from "@/lib/video.functions";
 import { awardXp, checkAchievements } from "@/lib/gamification";
 import confetti from "canvas-confetti";
 import { toast } from "sonner";
@@ -70,6 +71,7 @@ export const Route = createFileRoute("/guide/$id")({
           ],
           tips: ["Take your time, particularly on the setup phase.", "Ask the AI Coach if you get stuck on any steps."],
           video_query: "how to learn practical skills",
+          video_id: "L61p2uyiMSo",
           views: 42,
           is_published: true,
           author_id: null as string | null,
@@ -118,6 +120,78 @@ function GuidePage() {
   const [hoverVal, setHoverVal] = useState<number>(0);
   const [feedbackText, setFeedbackText] = useState("");
   const [newVideoQuery, setNewVideoQuery] = useState(guide.video_query || guide.title);
+  const [videoId, setVideoId] = useState<string | null>(guide.video_id || null);
+  const [resolvingVideo, setResolvingVideo] = useState(false);
+  const resolveVideoFn = useServerFn(resolveGuideVideo);
+
+  useEffect(() => {
+    setVideoId(guide.video_id || null);
+  }, [guide.video_id]);
+
+  useEffect(() => {
+    if (!videoId && guide.id && !guide.id.startsWith("demo-mock")) {
+      setResolvingVideo(true);
+      resolveVideoFn({ data: { guideId: guide.id, query: guide.video_query || guide.title } })
+        .then((res) => {
+          if (res?.videoId) {
+            setVideoId(res.videoId);
+            router.invalidate();
+          }
+        })
+        .catch((err) => {
+          console.error("Failed to resolve video on load:", err);
+        })
+        .finally(() => {
+          setResolvingVideo(false);
+        });
+    }
+  }, [guide.id, guide.video_query, guide.title, videoId]);
+
+  const [videoSearchResults, setVideoSearchResults] = useState<YouTubeVideoResult[]>([]);
+  const [searchingVideos, setSearchingVideos] = useState(false);
+  const searchVideosFn = useServerFn(searchYoutubeVideos);
+  const updateVideoIdFn = useServerFn(updateGuideVideoId);
+
+  const extractYoutubeId = (url: string): string | null => {
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? match[2] : null;
+  };
+
+  const handleSearchYoutube = async (q: string) => {
+    const trimmed = q.trim();
+    if (!trimmed) return;
+    
+    const directId = extractYoutubeId(trimmed);
+    if (directId) {
+      handleSelectVideo(directId);
+      return;
+    }
+    
+    setSearchingVideos(true);
+    try {
+      const results = await searchVideosFn({ data: { query: trimmed } });
+      setVideoSearchResults(results);
+      if (results.length === 0) {
+        toast.info("No matching YouTube videos found.");
+      }
+    } catch (err: any) {
+      toast.error(`Failed to search YouTube: ${err.message}`);
+    } finally {
+      setSearchingVideos(false);
+    }
+  };
+
+  const handleSelectVideo = async (vidId: string) => {
+    try {
+      await updateVideoIdFn({ data: { guideId: guide.id, videoId: vidId } });
+      setVideoId(vidId);
+      toast.success("Guide video updated successfully!");
+      router.invalidate();
+    } catch (err: any) {
+      toast.error(`Failed to update guide video: ${err.message}`);
+    }
+  };
 
   const steps = (guide.steps as Step[]) ?? [];
   const tips = (guide.tips as string[]) ?? [];
@@ -474,7 +548,9 @@ function GuidePage() {
   });
 
   const videoQuery = guide.video_query || guide.title;
-  const videoUrl = `https://www.youtube.com/embed?listType=search&list=${encodeURIComponent(videoQuery)}`;
+  const videoUrl = videoId
+    ? `https://www.youtube.com/embed/${videoId}`
+    : `https://www.youtube.com/embed?listType=search&list=${encodeURIComponent(videoQuery)}`;
 
   // Troubleshooter
   const [showTrouble, setShowTrouble] = useState(false);
@@ -890,18 +966,30 @@ function GuidePage() {
               </div>
             )}
 
-            {videoUrl && (
-              <div className="mt-6">
+            {resolvingVideo ? (
+              <div className="mt-6 space-y-2">
+                <div className="mb-2 flex items-center gap-2">
+                  <PlayCircle className="h-5 w-5 text-primary animate-pulse" />
+                  <h2 className="text-lg font-bold text-slate-600 animate-pulse">Resolving video...</h2>
+                </div>
+                <div className="card-elev overflow-hidden rounded-2xl bg-slate-905 border border-border/80 flex flex-col items-center justify-center aspect-video w-full p-4 text-center">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary mb-3" />
+                  <p className="text-sm font-semibold text-slate-700">Connecting to video sources</p>
+                  <p className="text-xs text-slate-400 mt-1">Finding the most relevant, high-quality walkthrough...</p>
+                </div>
+              </div>
+            ) : videoUrl ? (
+              <div className="mt-6 animate-fade-in">
                 <div className="mb-2 flex items-center gap-2">
                   <PlayCircle className="h-5 w-5 text-primary" />
                   <h2 className="text-lg font-bold">Video guide</h2>
                 </div>
-                <div className="card-elev overflow-hidden rounded-2xl">
+                <div className="card-elev overflow-hidden rounded-2xl border border-border">
                   <div className="relative aspect-video w-full bg-black">
                     <iframe
                       src={videoUrl}
                       title={`Video guide for ${guide.title}`}
-                      className="absolute inset-0 h-full w-full"
+                      className="absolute inset-0 h-full w-full border-none"
                       allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                       allowFullScreen
                     />
@@ -994,38 +1082,95 @@ function GuidePage() {
                     </form>
                   )}
 
-                  {/* Creator tools: Update query to improve video reference */}
-                  {user && guide.author_id === user.id && (
+                  {/* Creator / Community Tools: Manage/Suggest Reference Video */}
+                  {user && (
                     <div className="border-t border-border pt-4 space-y-3">
                       <div className="flex items-center gap-1.5 text-xs font-bold text-indigo-700 uppercase tracking-wider">
-                        <Sparkles className="h-4 w-4 text-indigo-500" /> Creator Tools: Improve Video Reference
+                        <Sparkles className="h-4 w-4 text-indigo-500 animate-pulse" />
+                        {guide.author_id === user.id ? "Creator Tools: Manage Reference Video" : "Community Tools: Suggest a Better Video"}
                       </div>
-                      <p className="text-xs text-muted-foreground">
-                        Use the community suggestions below to find a better tutorial video. Change the search term to load a better YouTube reference.
+                      <p className="text-xs text-muted-foreground leading-relaxed">
+                        {guide.author_id === user.id
+                          ? "Search and select a specific tutorial to embed, or update the search terms. You can also paste a direct YouTube video URL."
+                          : "Is the current video tutorial outdated, incorrect, or poor quality? Search YouTube or paste a direct YouTube URL to suggest a better one to improve this guide!"}
                       </p>
+                      
                       <form
                         onSubmit={(e) => {
                           e.preventDefault();
-                          if (newVideoQuery.trim()) {
-                            updateVideoQuery.mutate(newVideoQuery);
-                          }
+                          handleSearchYoutube(newVideoQuery);
                         }}
                         className="flex gap-2"
                       >
                         <input
                           value={newVideoQuery}
                           onChange={(e) => setNewVideoQuery(e.target.value)}
-                          placeholder="E.g., How to solder pipes tutorial"
-                          className="flex-1 rounded-xl border border-border bg-slate-50/50 px-3.5 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/20"
+                          placeholder="Search terms or paste YouTube URL/ID..."
+                          className="flex-1 rounded-xl border border-border bg-slate-50/50 px-3.5 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/20 transition"
                         />
                         <button
                           type="submit"
-                          disabled={updateVideoQuery.isPending || newVideoQuery.trim() === (guide.video_query || guide.title)}
+                          disabled={searchingVideos || !newVideoQuery.trim()}
                           className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-60 transition shadow-md shadow-indigo-600/10 cursor-pointer"
                         >
-                          {updateVideoQuery.isPending ? "Updating…" : "Update Video"}
+                          {searchingVideos ? "Searching..." : "Search YouTube"}
                         </button>
                       </form>
+
+                      {/* Video Search Results list */}
+                      {videoSearchResults.length > 0 && (
+                        <div className="mt-3 space-y-2 border border-slate-100 bg-slate-50/30 rounded-2xl p-3 animate-fade-in">
+                          <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                            Search Results ({videoSearchResults.length})
+                          </h4>
+                          <div className="grid gap-2.5 max-h-[300px] overflow-y-auto pr-1">
+                            {videoSearchResults.map((vid) => (
+                              <div
+                                key={vid.videoId}
+                                className="group flex gap-3 bg-white border border-border hover:border-indigo-200 rounded-xl p-2.5 transition shadow-sm hover:shadow-md"
+                              >
+                                <div className="relative aspect-video w-24 shrink-0 rounded-lg overflow-hidden bg-slate-100 border border-slate-100">
+                                  <img
+                                    src={`https://img.youtube.com/vi/${vid.videoId}/mqdefault.jpg`}
+                                    alt={vid.title}
+                                    className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                    loading="lazy"
+                                  />
+                                  <span className="absolute bottom-1 right-1 bg-black/80 px-1 py-0.5 rounded text-[10px] font-bold text-white tracking-wide">
+                                    {vid.duration}
+                                  </span>
+                                </div>
+                                <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
+                                  <div>
+                                    <h5 className="font-semibold text-slate-800 text-xs md:text-sm line-clamp-1 group-hover:text-indigo-600 transition-colors" title={vid.title}>
+                                      {vid.title}
+                                    </h5>
+                                    <p className="text-[11px] text-muted-foreground mt-0.5 font-medium">
+                                      {vid.channel}
+                                    </p>
+                                  </div>
+                                  <div className="flex gap-2 justify-end">
+                                    <button
+                                      type="button"
+                                      onClick={() => window.open(`https://youtube.com/watch?v=${vid.videoId}`, '_blank')}
+                                      className="text-[10px] font-bold text-slate-600 hover:text-indigo-600 hover:underline cursor-pointer"
+                                    >
+                                      Preview
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleSelectVideo(vid.videoId)}
+                                      className="rounded-lg bg-indigo-50 border border-indigo-100 hover:bg-indigo-600 hover:text-white hover:border-indigo-600 px-2.5 py-1 text-[11px] font-bold text-indigo-700 transition cursor-pointer"
+                                    >
+                                      Select & Embed
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
 
@@ -1073,7 +1218,7 @@ function GuidePage() {
                   )}
                 </div>
               </div>
-            )}
+            ) : null}
           </>
         )}
 

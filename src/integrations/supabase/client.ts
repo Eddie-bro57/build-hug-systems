@@ -52,6 +52,8 @@ const _demoListeners = new Set<{ callback: any }>();
 
 class MockQueryBuilder {
   table: string;
+  private _filters: Array<{ col: string; val: any }> = [];
+
   constructor(table: string) {
     this.table = table;
   }
@@ -93,6 +95,30 @@ class MockQueryBuilder {
         { user_id: "demo-user-id-00000", achievement_id: "ach-1", unlocked_at: new Date().toISOString(), achievement: { code: "first_step", title: "First Step", description: "Complete your first guide step." } }
       ];
     }
+    if (table === 'notifications') {
+      const welcomeNotifications = [
+        {
+          id: "notif-welcome",
+          user_id: "demo-user-id-00000",
+          title: "Welcome to DoGuide! 👋",
+          body: "We are thrilled to have you join our learning community. Complete steps to earn XP, maintain your daily streak, and master new practical skills!",
+          read: false,
+          link: "/paths",
+          created_at: new Date(Date.now() - 60000).toISOString()
+        },
+        {
+          id: "notif-xp",
+          user_id: "demo-user-id-00000",
+          title: "First XP Earned! ⚡",
+          body: "Great job! You earned 120 XP and reached Level 2. Check out your streak on your profile page.",
+          read: true,
+          link: "/profile",
+          created_at: new Date(Date.now() - 3600000 * 2).toISOString()
+        }
+      ];
+      localStorage.setItem(key, JSON.stringify(welcomeNotifications));
+      return welcomeNotifications;
+    }
     return [];
   }
   
@@ -104,17 +130,32 @@ class MockQueryBuilder {
   select(columns?: string) { return this; }
   order(column: string, options?: any) { return this; }
   limit(count: number) { return this; }
-  eq(column: string, value: any) { return this; }
+  
+  eq(column: string, value: any) {
+    this._filters.push({ col: column, val: value });
+    return this;
+  }
+
+  private _getFilteredList() {
+    let list = MockQueryBuilder.getList(this.table);
+    for (const filter of this._filters) {
+      list = list.filter((item: any) => item[filter.col] === filter.val);
+    }
+    return list;
+  }
   
   maybeSingle() {
-    return Promise.resolve({ data: MockQueryBuilder.getList(this.table)[0] || null, error: null });
+    const list = this._getFilteredList();
+    return Promise.resolve({ data: list[0] || null, error: null });
   }
+  
   single() {
-    return Promise.resolve({ data: MockQueryBuilder.getList(this.table)[0] || null, error: null });
+    const list = this._getFilteredList();
+    return Promise.resolve({ data: list[0] || null, error: null });
   }
   
   then(onfulfilled?: (value: any) => any) {
-    const list = MockQueryBuilder.getList(this.table);
+    const list = this._getFilteredList();
     const res = { data: list, error: null, count: list.length };
     return Promise.resolve(res).then(onfulfilled);
   }
@@ -125,7 +166,7 @@ class MockQueryBuilder {
     newItems.forEach(item => {
       list.push({ 
         ...item, 
-        id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(), 
+        id: item.id || (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString()), 
         created_at: new Date().toISOString() 
       });
     });
@@ -153,15 +194,26 @@ class MockQueryBuilder {
   
   update(values: any) {
     const list = MockQueryBuilder.getList(this.table);
-    if (list.length > 0) {
-      list[0] = { ...list[0], ...values };
-      MockQueryBuilder.setList(this.table, list);
-    }
-    return Promise.resolve({ data: list[0], error: null });
+    let updatedItem = null;
+    const nextList = list.map((item: any) => {
+      const matches = this._filters.every(f => item[f.col] === f.val);
+      if (matches) {
+        updatedItem = { ...item, ...values };
+        return updatedItem;
+      }
+      return item;
+    });
+    MockQueryBuilder.setList(this.table, nextList);
+    return Promise.resolve({ data: updatedItem || list[0] || null, error: null });
   }
   
   delete() {
-    MockQueryBuilder.setList(this.table, []);
+    const list = MockQueryBuilder.getList(this.table);
+    const nextList = list.filter((item: any) => {
+      const matches = this._filters.every(f => item[f.col] === f.val);
+      return !matches;
+    });
+    MockQueryBuilder.setList(this.table, nextList);
     return Promise.resolve({ error: null });
   }
 }

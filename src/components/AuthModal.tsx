@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const signUpSchema = z.object({
   displayName: z
@@ -82,15 +83,38 @@ export function AuthModal({
     });
     setSubmitting(false);
     if (err) {
+      setSubmitting(false);
       setError(err.message);
       return;
     }
     if (data.session) {
-      // Auto signed in
+      setSubmitting(false);
       onOpenChange(false);
       reset();
+      toast.success("Account created and signed in!");
     } else {
-      setInfo("Check your email to confirm your account, then sign in.");
+      // Auto-confirm database trigger allows us to log in immediately with email & password!
+      try {
+        const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({
+          email: parsed.data.email,
+          password: parsed.data.password,
+        });
+        setSubmitting(false);
+        if (signInErr) {
+          setError(signInErr.message);
+          return;
+        }
+        if (signInData.session) {
+          onOpenChange(false);
+          reset();
+          toast.success("Account created and signed in!");
+        } else {
+          setInfo("Account created! Please switch to the Sign In tab to sign in.");
+        }
+      } catch (e: any) {
+        setSubmitting(false);
+        setError(e.message || "Failed to log in automatically.");
+      }
     }
   };
 
