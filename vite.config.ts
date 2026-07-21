@@ -10,7 +10,7 @@ const isGithubPages = process.env.DEPLOY_TARGET === "github_pages";
 
 export default defineConfig({
   vite: {
-    base: isGithubPages ? "/build-hug-systems/" : "/",
+    base: isGithubPages ? "/DoGuide/" : "/",
   },
   tanstackStart: {
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).

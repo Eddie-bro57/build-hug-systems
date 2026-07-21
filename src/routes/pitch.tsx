@@ -413,9 +413,108 @@ function PitchDeckPage() {
         </div>
       )
     },
-    // Slide 8: Thank You / Closing
+    // Slide 8: Internship Roadmap
     {
       id: 8,
+      title: "Internship Roadmap",
+      subtitle: "12-Week Feature Expansion & Delivery",
+      icon: <TrendingUp className="h-6 w-6 text-indigo-400" />,
+      content: (
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-12 items-center h-full">
+          <div className="md:col-span-12 space-y-4">
+            <h3 className="text-xl font-bold text-white text-center sm:text-left">Milestones Aligned with Phase 2 & 3</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="p-5 rounded-3xl border border-blue-500/20 bg-blue-500/5 backdrop-blur-md space-y-3">
+                <div className="inline-flex items-center gap-1.5 rounded-full bg-blue-500/10 px-3 py-1 text-[11px] font-bold text-blue-400 uppercase">
+                  Weeks 1–4 · MVP Polish
+                </div>
+                <h4 className="text-lg font-bold text-white">Core Refinement</h4>
+                <ul className="text-xs text-slate-300 space-y-2 list-disc list-inside">
+                  <li>Deploy service worker & IndexedDB for F07 Offline Access</li>
+                  <li>Reduce AI Gateway latency (Gemini response stream tuning)</li>
+                  <li>Polish mobile app-shell UI transitions & responsiveness</li>
+                </ul>
+              </div>
+
+              <div className="p-5 rounded-3xl border border-purple-500/20 bg-purple-500/5 backdrop-blur-md space-y-3">
+                <div className="inline-flex items-center gap-1.5 rounded-full bg-purple-500/10 px-3 py-1 text-[11px] font-bold text-purple-400 uppercase">
+                  Weeks 5–8 · Community
+                </div>
+                <h4 className="text-lg font-bold text-white">Engagement & Loops</h4>
+                <ul className="text-xs text-slate-300 space-y-2 list-disc list-inside">
+                  <li>Implement F11 comments & user feedback loops</li>
+                  <li>Build F12 Creator Profiles with handle-based sharing</li>
+                  <li>Gamify progress: add milestones & custom achievement triggers</li>
+                </ul>
+              </div>
+
+              <div className="p-5 rounded-3xl border border-emerald-500/20 bg-emerald-500/5 backdrop-blur-md space-y-3">
+                <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-1 text-[11px] font-bold text-emerald-400 uppercase">
+                  Weeks 9–12 · Intelligence
+                </div>
+                <h4 className="text-lg font-bold text-white">Smart Features</h4>
+                <ul className="text-xs text-slate-300 space-y-2 list-disc list-inside">
+                  <li>Integrate F10 Voice Search using Web Speech API</li>
+                  <li>Develop personalized guide recommendation models</li>
+                  <li>PWA distribution setup & local notification prompts</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      )
+    },
+    // Slide 9: Technical Architecture
+    {
+      id: 9,
+      title: "Technical Architecture",
+      subtitle: "DoGuide's Modern Technology Stack",
+      icon: <Cpu className="h-6 w-6 text-cyan-400" />,
+      content: (
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-12 items-center h-full">
+          <div className="md:col-span-12 space-y-4">
+            <h3 className="text-xl font-bold text-white text-center sm:text-left">End-to-End Scalable Stack</h3>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              {[
+                {
+                  layer: "Frontend & Router",
+                  stack: "TanStack Start + Vite",
+                  details: "File-based routing, server-side rendering (SSR), and seamless bundle code splitting.",
+                  color: "border-pink-500/20 bg-pink-500/5 text-pink-400"
+                },
+                {
+                  layer: "Styling & UI",
+                  stack: "Tailwind CSS v4 + Radix",
+                  details: "High performance build-time utility compiling with responsive, accessible primitives.",
+                  color: "border-cyan-500/20 bg-cyan-500/5 text-cyan-400"
+                },
+                {
+                  layer: "Database & Security",
+                  stack: "Supabase + PostgreSQL",
+                  details: "Real-time client connections, database triggers, Row Level Security (RLS) for user-owned data.",
+                  color: "border-emerald-500/20 bg-emerald-500/5 text-emerald-400"
+                },
+                {
+                  layer: "AI & Inference",
+                  stack: "AI Gateway + Gemini",
+                  details: "Streamlined integration with Gemini 3.5 Flash for quick-response generation and troubleshooter chatbots.",
+                  color: "border-amber-500/20 bg-amber-500/5 text-amber-400"
+                }
+              ].map((tech, idx) => (
+                <div key={idx} className={`p-5 rounded-3xl border ${tech.color.split(' ')[0]} ${tech.color.split(' ')[1]} backdrop-blur-md space-y-2`}>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{tech.layer}</span>
+                  <h4 className={`text-base font-extrabold ${tech.color.split(' ')[2]}`}>{tech.stack}</h4>
+                  <p className="text-xs text-slate-300 leading-relaxed">{tech.details}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )
+    },
+    // Slide 10: Thank You / Closing
+    {
+      id: 10,
       title: "Thank You",
       subtitle: "Join the DoGuide Journey",
       icon: <Sparkles className="h-6 w-6 text-amber-400 animate-pulse" />,
